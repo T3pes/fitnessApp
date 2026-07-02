@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060b16">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>IL SISTEMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060b16; --panel:#0a1424; --panel2:#0d1a30;
+  --line:#12365c; --glow:#00c8ff; --glow-soft:rgba(0,200,255,.35);
+  --ice:#7fe7ff; --text:#d7e9f7; --muted:#7d93ad;
+  --gold:#ffd76a; --danger:#ff4d6d; --ok:#38e08b;
+  --str:#ff6b6b; --end:#4dabff; --agi:#38e08b; --vit:#ffd76a; --int:#c08bff;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Rajdhani',system-ui,sans-serif; font-size:17px;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,120,220,.16), transparent),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,200,255,.012) 3px 4px);
+  min-height:100dvh; padding-bottom:40px;
+}
+.wrap{max-width:520px;margin:0 auto;padding:14px}
+
+/* ── System window with corner brackets ── */
+.sys{
+  position:relative; background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); padding:16px 14px; margin-bottom:14px;
+  box-shadow:0 0 24px rgba(0,140,255,.10), inset 0 0 40px rgba(0,140,255,.04);
+}
+.sys::before,.sys::after,.sys .cb::before,.sys .cb::after{
+  content:''; position:absolute; width:14px; height:14px; border:2px solid var(--glow);
+  filter:drop-shadow(0 0 4px var(--glow-soft));
+}
+.sys::before{top:-2px;left:-2px;border-right:none;border-bottom:none}
+.sys::after{top:-2px;right:-2px;border-left:none;border-bottom:none}
+.sys .cb::before{bottom:-2px;left:-2px;border-right:none;border-top:none}
+.sys .cb::after{bottom:-2px;right:-2px;border-left:none;border-top:none}
+
+.sys-head{
+  display:flex;align-items:center;gap:10px;justify-content:center;
+  margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line);
+}
+.sys-head .icon{
+  width:26px;height:26px;border:2px solid var(--glow);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--glow);font-family:'Orbitron';font-weight:900;font-size:15px;
+  box-shadow:0 0 10px var(--glow-soft); animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px var(--glow-soft)}50%{box-shadow:0 0 16px var(--glow)}}
+.sys-head h2{
+  font-family:'Orbitron';font-size:14px;font-weight:700;letter-spacing:4px;
+  color:var(--ice);text-shadow:0 0 12px var(--glow-soft);text-transform:uppercase;
+}
+.sub{color:var(--muted);font-size:13.5px;text-align:center;letter-spacing:.5px}
+
+/* ── Header player ── */
+.player-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.pname{font-family:'Orbitron';font-size:17px;font-weight:700;letter-spacing:2px;color:#fff}
+.ptitle{font-size:12.5px;color:var(--muted);letter-spacing:1px}
+.lvl{font-family:'Orbitron';font-weight:900;font-size:15px;color:var(--gold);text-shadow:0 0 10px rgba(255,215,106,.4)}
+.bar{height:10px;background:#081020;border:1px solid var(--line);position:relative;overflow:hidden;margin:6px 0 4px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#0077cc,var(--glow));
+  box-shadow:0 0 12px var(--glow-soft);transition:width .5s cubic-bezier(.2,.9,.3,1)}
+.bar-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);letter-spacing:1px}
+.badges{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.badge{font-size:12px;letter-spacing:1px;color:var(--ice);border:1px solid var(--line);
+  padding:3px 9px;background:rgba(0,140,255,.06)}
+.class-box{
+  margin-top:12px;padding:10px;border:1px solid var(--line);
+  background:rgba(0,140,255,.05);font-size:13.5px;line-height:1.45;
+}
+.class-box .cname{font-family:'Orbitron';font-size:14px;letter-spacing:2px;color:var(--gold);
+  text-shadow:0 0 10px rgba(255,215,106,.35)}
+.class-box.locked .cname{color:var(--muted);text-shadow:none}
+
+/* ── Quest ── */
+.q-alert{
+  text-align:center;font-family:'Orbitron';font-size:11px;letter-spacing:3px;
+  color:var(--gold);margin-bottom:10px;text-shadow:0 0 8px rgba(255,215,106,.35);
+}
+.notice{
+  border:1px solid var(--danger);color:#ffb3c0;background:rgba(255,77,109,.07);
+  font-size:13.5px;padding:9px 10px;margin-bottom:10px;line-height:1.4;letter-spacing:.5px;
+}
+.mission{
+  display:flex;align-items:center;gap:12px;padding:12px 10px;
+  border:1px solid var(--line);background:rgba(4,12,26,.5);margin-bottom:9px;
+  transition:all .25s;
+}
+.mission.done{border-color:rgba(56,224,139,.5);background:rgba(20,60,45,.18)}
+.mission.penalty{border-color:var(--danger);background:rgba(80,10,25,.15)}
+.mission.penalty.done{border-color:rgba(56,224,139,.5)}
+.check{
+  min-width:30px;height:30px;border:2px solid var(--glow);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:transparent;
+  font-weight:900;font-size:18px;transition:all .2s;flex-shrink:0;
+}
+.mission.penalty .check{border-color:var(--danger)}
+.mission.done .check{border-color:var(--ok);background:rgba(56,224,139,.15);color:var(--ok);
+  box-shadow:0 0 10px rgba(56,224,139,.35)}
+.m-body{flex:1;min-width:0}
+.m-name{font-weight:600;font-size:16.5px;letter-spacing:.5px}
+.mission.penalty .m-name{color:#ffb3c0}
+.mission.done .m-name{color:var(--muted);text-decoration:line-through}
+.m-target{font-family:'Orbitron';font-size:13px;color:var(--ice);letter-spacing:1px}
+.m-reward{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.tag{font-size:11px;font-weight:700;letter-spacing:1px;padding:2px 7px;border:1px solid}
+.tag.FOR{color:var(--str);border-color:var(--str)} .tag.RES{color:var(--end);border-color:var(--end)}
+.tag.AGI{color:var(--agi);border-color:var(--agi)} .tag.VIT{color:var(--vit);border-color:var(--vit)}
+.tag.INT{color:var(--int);border-color:var(--int)}
+.tag.PEN{color:var(--danger);border-color:var(--danger)}
+.xp-tag{font-size:12px;color:var(--muted);letter-spacing:1px}
+.m-info{font-size:13.5px;color:var(--muted);line-height:1.45;padding:8px 4px 2px;display:none;border-top:1px dashed var(--line);margin-top:8px}
+.mission.open .m-info{display:block}
+.info-btn{background:none;border:1px solid var(--line);color:var(--muted);font-size:11px;
+  padding:2px 8px;cursor:pointer;letter-spacing:1px;font-family:'Rajdhani';margin-top:3px}
+.bonus-line{
+  text-align:center;font-size:13px;color:var(--muted);letter-spacing:1px;
+  padding:8px;border:1px dashed var(--line);margin-top:6px;
+}
+.bonus-line.won{color:var(--gold);border-color:var(--gold);text-shadow:0 0 8px rgba(255,215,106,.3)}
+
+/* ── Stats ── */
+.stat{display:grid;grid-template-columns:52px 1fr 46px;gap:10px;align-items:center;margin-bottom:11px}
+.stat .abbr{font-family:'Orbitron';font-weight:700;font-size:13px;letter-spacing:1px}
+.stat .val{font-family:'Orbitron';font-weight:700;font-size:15px;text-align:right}
+.sbar{height:9px;background:#081020;border:1px solid var(--line);overflow:hidden}
+.sbar>i{display:block;height:100%;transition:width .6s}
+.s-FOR .abbr,.s-FOR .val{color:var(--str)} .s-FOR i{background:linear-gradient(90deg,#802,var(--str));box-shadow:0 0 8px rgba(255,107,107,.4)}
+.s-RES .abbr,.s-RES .val{color:var(--end)} .s-RES i{background:linear-gradient(90deg,#036,var(--end));box-shadow:0 0 8px rgba(77,171,255,.4)}
+.s-AGI .abbr,.s-AGI .val{color:var(--agi)} .s-AGI i{background:linear-gradient(90deg,#063,var(--agi));box-shadow:0 0 8px rgba(56,224,139,.4)}
+.s-VIT .abbr,.s-VIT .val{color:var(--vit)} .s-VIT i{background:linear-gradient(90deg,#750,var(--vit));box-shadow:0 0 8px rgba(255,215,106,.4)}
+.s-INT .abbr,.s-INT .val{color:var(--int)} .s-INT i{background:linear-gradient(90deg,#519,var(--int));box-shadow:0 0 8px rgba(192,139,255,.4)}
+
+/* ── Abilities ── */
+.skill{
+  display:flex;gap:12px;align-items:flex-start;padding:11px 10px;margin-bottom:9px;
+  border:1px solid var(--line);background:rgba(4,12,26,.5);
+}
+.skill .s-icon{
+  min-width:34px;height:34px;border:1px solid var(--glow);display:flex;align-items:center;
+  justify-content:center;font-size:17px;color:var(--ice);flex-shrink:0;
+  box-shadow:0 0 8px rgba(0,140,255,.2);
+}
+.skill.locked{opacity:.45;filter:saturate(.3)}
+.skill.locked .s-icon{border-color:var(--muted);color:var(--muted);box-shadow:none}
+.skill .s-name{font-weight:700;letter-spacing:1px;font-size:15px;color:var(--ice)}
+.skill.locked .s-name{color:var(--muted)}
+.skill .s-desc{font-size:13.5px;color:var(--muted);line-height:1.4}
+.skill .s-req{font-size:11.5px;color:var(--gold);letter-spacing:1px;margin-top:2px}
+.skill.locked .s-req{color:var(--muted)}
+
+/* ── Buttons / misc ── */
+.btn{
+  width:100%;padding:13px;background:linear-gradient(180deg,#0d2c4d,#0a1e38);
+  border:1px solid var(--glow);color:var(--ice);font-family:'Orbitron';
+  font-size:14px;font-weight:700;letter-spacing:3px;cursor:pointer;
+  text-shadow:0 0 8px var(--glow-soft);box-shadow:0 0 14px rgba(0,140,255,.15);
+  transition:all .2s;
+}
+.btn:active{transform:scale(.98);box-shadow:0 0 22px var(--glow-soft)}
+.btn.ghost{border-color:var(--line);color:var(--muted);box-shadow:none;text-shadow:none;font-size:12px;padding:10px}
+input[type=text]{
+  width:100%;padding:12px;background:#050d1c;border:1px solid var(--line);
+  color:#fff;font-family:'Rajdhani';font-size:18px;letter-spacing:1px;
+  text-align:center;margin:14px 0;outline:none;
+}
+input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-soft)}
+.hidden{display:none!important}
+.row2{display:flex;gap:10px}
+
+/* ── Float points ── */
+.float-pt{
+  position:fixed;font-family:'Orbitron';font-weight:900;font-size:17px;
+  pointer-events:none;z-index:99;animation:floatUp 1.2s forwards;text-shadow:0 0 10px currentColor;
+}
+@keyframes floatUp{0%{opacity:0;transform:translateY(6px)}15%{opacity:1}100%{opacity:0;transform:translateY(-48px)}}
+
+/* ── Overlays ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(2,6,14,.92);z-index:100;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  animation:fadeIn .3s;padding:20px;text-align:center;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lvlup-txt{
+  font-family:'Orbitron';font-size:38px;font-weight:900;letter-spacing:6px;color:var(--gold);
+  text-shadow:0 0 30px rgba(255,215,106,.8),0 0 60px rgba(255,215,106,.4);
+  animation:zoomIn .5s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes zoomIn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.lvlup-sub{color:var(--ice);letter-spacing:2px;font-size:16px;line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ═══ ONBOARDING ═══ -->
+  <div id="scr-onboard">
+    <div class="sys" style="margin-top:14vh"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">!</div><h2>Notifica</h2></div>
+      <p style="text-align:center;font-size:19px;letter-spacing:1px;margin-bottom:6px">
+        Hai soddisfatto tutti i requisiti.
+      </p>
+      <p class="sub">Vuoi diventare un <b style="color:var(--ice)">Giocatore</b>?</p>
+      <input type="text" id="inp-name" maxlength="16" placeholder="Inserisci il tuo nome" autocomplete="off">
+      <button class="btn" onclick="createPlayer()">ACCETTA</button>
+      <p class="sub" style="margin-top:12px;font-size:12px">
+        Missioni giornaliere · punti automatici · abilità sbloccabili · cambio classe al Lv.30.<br>
+        Attenzione: le quest non completate comportano una penalità.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div id="scr-main" class="hidden">
+
+    <div class="sys"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">i</div><h2>Stato</h2></div>
+      <div class="player-row">
+        <div><div class="pname" id="ui-name"></div><div class="ptitle" id="ui-title"></div></div>
+        <div class="lvl">LV. <span id="ui-lvl"></span></div>
+      </div>
+      <div class="bar"><i id="ui-xpbar"></i></div>
+      <div class="bar-label"><span>XP</span><span id="ui-xptxt"></span></div>
+      <div class="badges">
+        <span class="badge">🔥 Streak: <b id="ui-streak"></b></span>
+        <span class="badge">✔ Quest totali: <b id="ui-total"></b></span>
+      </div>
+      <div class="class-box" id="ui-class"></div>
+    </div>
+
+    <div class="sys"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">!</div><h2>Quest Giornaliera</h2></div>
+      <div class="q-alert" id="ui-qtitle"></div>
+      <div class="notice hidden" id="ui-penalty-notice"></div>
+      <div id="ui-missions"></div>
+      <div class="bonus-line" id="ui-bonus"></div>
+    </div>
+
+    <div class="sys"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">▲</div><h2>Statistiche</h2></div>
+      <div id="ui-stats"></div>
+    </div>
+
+    <div class="sys"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">✦</div><h2>Abilità</h2></div>
+      <div id="ui-skills"></div>
+    </div>
+
+    <div class="row2">
+      <button class="btn ghost" onclick="exportSave()">ESPORTA DATI</button>
+      <button class="btn ghost" onclick="importSave()">IMPORTA DATI</button>
+    </div>
+    <input type="file" id="inp-import" accept=".json" class="hidden">
+  </div>
+</div>
+
+<div id="ui-overlay" class="overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="lvlup-txt" id="ui-ov-title">LEVEL UP</div>
+  <div class="lvlup-sub" id="ui-ov-sub"></div>
+  <div class="sub" style="font-size:13px">— tocca per continuare —</div>
+</div>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   IL SISTEMA v2 — daily quest tracker stile Solo Leveling
+   Novità v2: statistica INT · classi al Lv.30 · ricompense di
+   classe · penalità · abilità passive con effetti reali
+   Persistenza: localStorage (fallback in-memory) + migrazione v1
+   ═════════════════════════════════════════════════════════════ */
+
+// ---------- storage sicuro ----------
+const store = (() => {
+  let mem = {};
+  try {
+    localStorage.setItem('__t','1'); localStorage.removeItem('__t');
+    return {
+      get: k => { try { return localStorage.getItem(k); } catch(e){ return mem[k] ?? null; } },
+      set: (k,v) => { try { localStorage.setItem(k,v); } catch(e){ mem[k]=v; } }
+    };
+  } catch(e) {
+    return { get: k => mem[k] ?? null, set: (k,v) => { mem[k]=v; } };
+  }
+})();
+
+const KEY = 'sl_save_v2', KEY_V1 = 'sl_save_v1';
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const isSunday = () => new Date().getDay() === 0;
+const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+
+// ---------- catalogo esercizi (lato personal trainer) ----------
+// target = f(livello), progressione ~5-10% per livello con tetti di sicurezza.
+const EX = {
+  pushup:  { name:'Flessioni', stat:'FOR', pts:3, xp:20,
+    target:l=>Math.min(10+2*l, 80)+' rip.',
+    info:'Corpo in linea retta, core contratto, scendi col petto quasi a terra, gomiti a ~45°. Troppo difficile? Falle sulle ginocchia o contro un muro: contano uguale.' },
+  squat:   { name:'Squat a corpo libero', stat:'FOR', pts:3, xp:20,
+    target:l=>Math.min(15+3*l, 120)+' rip.',
+    info:'Piedi larghezza spalle, scendi come per sederti finché le cosce sono parallele al suolo, schiena dritta, talloni a terra. Spingi sui talloni per risalire.' },
+  lunge:   { name:'Affondi alternati', stat:'FOR', pts:3, xp:20,
+    target:l=>Math.min(10+2*l, 60)+' rip. tot',
+    info:'Passo avanti ampio, ginocchio posteriore verso il suolo, busto verticale. Alterna le gambe. Se perdi equilibrio, appoggia una mano al muro.' },
+  plank:   { name:'Plank', stat:'RES', pts:3, xp:15,
+    target:l=>Math.min(20+5*l, 240)+' sec',
+    info:'Avambracci a terra, corpo in linea, glutei e addome contratti, non alzare il bacino. Se cedi, dividi il tempo in 2-3 serie con 30 sec di pausa.' },
+  cardio:  { name:'Camminata veloce / corsa', stat:'RES', pts:4, xp:25,
+    target:l=>Math.min(15+l, 60)+' min',
+    info:'Ritmo che ti fa respirare più forte ma ti permette ancora di parlare. Dal Lv.5 puoi alternare 1 min di corsa e 2 di camminata.' },
+  mclimber:{ name:'Mountain climber', stat:'RES', pts:3, xp:15,
+    target:l=>Math.min(20+4*l, 100)+' rip.',
+    info:'Posizione di flessione, porta le ginocchia al petto alternandole, ritmo costante, bacino basso.' },
+  jjack:   { name:'Jumping jack', stat:'AGI', pts:3, xp:15,
+    target:l=>Math.min(20+5*l, 150)+' rip.',
+    info:'Salta aprendo gambe e braccia contemporaneamente, atterra morbido sulle punte. Ottimo come riscaldamento prima degli altri esercizi.' },
+  stretch: { name:'Stretching completo', stat:'AGI', pts:2, xp:10,
+    target:l=>Math.min(5+Math.floor(l/2), 20)+' min',
+    info:'Allunga gambe, schiena, spalle e collo. Ogni posizione 30 sec, senza molleggiare, respirando lentamente. Mai dolore acuto, solo tensione.' },
+  water:   { name:'Bevi acqua', stat:'VIT', pts:2, xp:10,
+    target:()=>'8 bicchieri',
+    info:'Circa 2 litri distribuiti nella giornata. Idratazione = recupero muscolare e concentrazione.' },
+  sleep:   { name:'Dormi almeno 7 ore', stat:'VIT', pts:2, xp:10,
+    target:()=>'la notte scorsa',
+    info:'Il sonno è dove il corpo si potenzia davvero: senza recupero non c\u2019è level up. Spuntala se stanotte hai dormito 7+ ore.' },
+  walkez:  { name:'Camminata leggera', stat:'VIT', pts:3, xp:15,
+    target:l=>Math.min(20+l, 45)+' min',
+    info:'Passo tranquillo, meglio all\u2019aperto. Il recupero attivo mantiene i punti senza stressare i muscoli.' },
+  // ── missioni Intelligenza ──
+  lettura: { name:'Lettura', stat:'INT', pts:3, xp:15,
+    target:l=>Math.min(15+Math.floor(l/2), 45)+' min',
+    info:'Libro, saggio o articolo di qualità (non scroll sui social). La lettura profonda allena memoria e concentrazione come lo squat allena le gambe.' },
+  medita:  { name:'Meditazione / respirazione', stat:'INT', pts:2, xp:12,
+    target:l=>Math.min(5+Math.floor(l/3), 15)+' min',
+    info:'Seduto comodo, occhi chiusi, attenzione sul respiro: 4 sec inspiro, 6 sec espiro. Quando la mente vaga, riportala al respiro senza giudicarti: è la ripetizione dell\u2019esercizio.' },
+  studio:  { name:'Impara qualcosa di nuovo', stat:'INT', pts:3, xp:15,
+    target:l=>Math.min(15+Math.floor(l/2), 40)+' min',
+    info:'Lingua, corso, tutorial, strumento musicale: qualunque cosa che richieda apprendimento attivo. La costanza batte l\u2019intensità.' }
+};
+
+// Rotazione: 4 fisiche core + 1 INT + 1 extra a rotazione. Domenica = recupero.
+function questIdsForToday(){
+  if (isSunday()) return ['stretch','walkez','medita','water','sleep'];
+  const day = new Date().getDay(); // 1..6
+  const intRot   = ['lettura','medita','studio'][day % 3];
+  const extraRot = ['jjack','water','sleep','mclimber','lunge','stretch'][(day-1) % 6];
+  return ['pushup','squat','plank','cardio', intRot, extraRot];
+}
+
+// ---------- penalità (lato personal trainer: dura ma sicura) ----------
+function buildPenaltyMission(level){
+  const sq = Math.min(20+3*level, 80);
+  const mn = Math.min(15+level, 40);
+  return {
+    id:'penalty', penalty:true, name:'QUEST PENALITÀ', stat:'PEN', pts:0, xp:15,
+    target:`${sq} squat + ${mn} min camminata`,
+    info:'Hai fallito la quest di ieri. Il Sistema non concede il bonus giornaliero finché la penalità non è saldata. Nessun punto statistica: solo disciplina. Esegui gli squat in serie da 15-20 con pause brevi.',
+    done:false
+  };
+}
+
+// ---------- classi (sblocco Lv.30, in base alla statistica dominante) ----------
+const CLASSES = {
+  FOR:{ name:'BERSERKER', icon:'⚔', color:'var(--str)',
+        desc:'La tua forza domina. Missioni di Forza: punti +50%. Completamento giornaliero: +2 FOR extra.' },
+  RES:{ name:'GUARDIANO', icon:'🛡', color:'var(--end)',
+        desc:'Nessuno ti spezza. Missioni di Resistenza: punti +50%. Completamento giornaliero: +2 RES extra.' },
+  AGI:{ name:'ASSASSINO', icon:'🗡', color:'var(--agi)',
+        desc:'Veloce e letale. XP +25% su tutte le missioni. Completamento giornaliero: +2 AGI extra.' },
+  VIT:{ name:'MONACO', icon:'☯', color:'var(--vit)',
+        desc:'Il corpo è il tempio. Penalità XP dimezzate. Completamento giornaliero: +2 VIT extra.' },
+  INT:{ name:'ARCIMAGO', icon:'✦', color:'var(--int)',
+        desc:'La mente è l\u2019arma suprema. Bonus di completamento giornaliero RADDOPPIATO. +2 INT extra al giorno completato.' }
+};
+function pickClass(stats){
+  let best='FOR';
+  for(const k of ['FOR','RES','AGI','VIT','INT'])
+    if(stats[k] > stats[best]) best = k;
+  return best;
+}
+
+// ---------- abilità passive (effetti reali nel codice) ----------
+const ABILITIES = [
+  { id:'persistenza', lvl:5,  icon:'⟳', name:'Persistenza',
+    desc:'+10% XP da tutte le missioni.' },
+  { id:'doppio',      lvl:10, icon:'✧', name:'Doppio Colpo',
+    desc:'La prima missione completata di ogni giorno assegna punti statistica DOPPI.' },
+  { id:'recupero',    lvl:15, icon:'♻', name:'Recupero Rapido',
+    desc:'Le penalità XP per quest fallite sono dimezzate.' },
+  { id:'mente',       lvl:20, icon:'◈', name:'Mente Lucida',
+    desc:'Le missioni di Intelligenza assegnano punti +50%.' },
+  { id:'sovrano',     lvl:25, icon:'♛', name:'Volontà del Sovrano',
+    desc:'Bonus di completamento giornaliero +50%.' },
+  { id:'fiamma',      lvl:null, req:'Streak ≥ 7 giorni', icon:'🔥', name:'Fiamma Costante',
+    desc:'Finché la streak è di almeno 7 giorni, ricevi +1 VIT automatico ogni mattina.' },
+  { id:'risveglio',   lvl:30, icon:'☄', name:'Risveglio',
+    desc:'Cambio classe: il Sistema ti assegna una classe in base alla tua statistica dominante, con ricompense permanenti.' },
+];
+function hasAbility(id){
+  if(!S) return false;
+  if(id==='fiamma') return S.streak >= 7;
+  const a = ABILITIES.find(x=>x.id===id);
+  return a && a.lvl !== null && S.level >= a.lvl;
+}
+
+// ---------- motore ricompense (il Sistema calcola tutto) ----------
+// Ritorna {pts, xp} finali per una missione, applicando abilità e classe.
+function computeReward(m){
+  if(m.penalty) return { pts:0, xp:m.xp };
+  let pts = m.pts, xp = m.xp;
+
+  // Doppio Colpo: prima missione del giorno → punti x2
+  if(hasAbility('doppio') && !S.firstStrikeUsed) pts *= 2;
+
+  // Mente Lucida: missioni INT +50% punti
+  if(hasAbility('mente') && m.stat==='INT') pts = Math.round(pts*1.5);
+
+  // Classe: +50% punti sulle missioni della statistica di classe (Berserker/Guardiano)
+  if(S.class && (S.class==='FOR'||S.class==='RES') && m.stat===S.class) pts = Math.round(pts*1.5);
+
+  // XP: Persistenza +10%, Assassino +25%
+  let mult = 1;
+  if(hasAbility('persistenza')) mult += 0.10;
+  if(S.class==='AGI') mult += 0.25;
+  xp = Math.round(xp*mult);
+
+  return { pts, xp };
+}
+function completionBonus(){
+  let b = 30 + S.level*5;
+  if(hasAbility('sovrano')) b = Math.round(b*1.5);
+  if(S.class==='INT') b *= 2;                       // Arcimago
+  return b;
+}
+function penaltyXpLoss(){
+  let loss = 10 + 2*S.level;
+  if(hasAbility('recupero') || S.class==='VIT') loss = Math.round(loss/2);
+  return loss;
+}
+
+// ---------- stato & salvataggio ----------
+let S = null;
+
+function defaultSave(name){
+  return {
+    v:2, name, level:1, xp:0, totalDone:0, streak:0,
+    stats:{FOR:10,RES:10,AGI:10,VIT:10,INT:10},
+    class:null,                    // 'FOR'|'RES'|'AGI'|'VIT'|'INT' dal Lv.30
+    day:todayStr(),
+    missions:buildMissions(1),
+    bonusClaimed:false,
+    firstStrikeUsed:false,         // per Doppio Colpo
+    penaltyNotice:null             // messaggio penalità del giorno
+  };
+}
+function buildMissions(level){
+  return questIdsForToday().map(id=>{
+    const e=EX[id];
+    return { id, name:e.name, stat:e.stat, pts:e.pts, xp:e.xp,
+             target:e.target(level), info:e.info, done:false };
+  });
+}
+const xpNeeded = lvl => 100 + (lvl-1)*25;
+const rankTitle = lvl => lvl>=40?'Monarca':lvl>=30?'Rango S':lvl>=20?'Rango A':lvl>=15?'Rango B':lvl>=10?'Rango C':lvl>=5?'Rango D':'Rango E';
+
+function migrateV1(old){
+  const s = defaultSave(old.name);
+  s.level=old.level; s.xp=old.xp; s.totalDone=old.totalDone; s.streak=old.streak;
+  Object.assign(s.stats, old.stats);      // INT resta 10
+  s.day=''; // forza rigenerazione missioni al boot (nuovo formato con INT)
+  return s;
+}
+function load(){
+  let raw = store.get(KEY);
+  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+  raw = store.get(KEY_V1);
+  if(raw){ try { return migrateV1(JSON.parse(raw)); } catch(e){} }
+  return null;
+}
+function save(){ store.set(KEY, JSON.stringify(S)); }
+
+// ---------- reset di mezzanotte + penalità ----------
+function checkNewDay(){
+  if(!S) return;
+  const t = todayStr();
+  if(S.day === t) return;
+
+  const hadMissions = S.missions && S.missions.length > 0;
+  const allDone = hadMissions && S.missions.every(m=>m.done);
+  let pendingPenalty = false;
+
+  if(hadMissions && !allDone && S.day !== ''){       // giorno fallito
+    S.streak = 0;
+    const loss = Math.min(S.xp, penaltyXpLoss());
+    S.xp -= loss;
+    pendingPenalty = true;
+    S.penaltyNotice = `⚠ Quest di ieri fallita: −${loss} XP · streak azzerata · Quest Penalità assegnata.`;
+  } else {
+    if(allDone) S.streak++;
+    S.penaltyNotice = null;
+  }
+
+  // Fiamma Costante: +1 VIT al giorno con streak ≥ 7
+  if(S.streak >= 7) S.stats.VIT++;
+
+  S.day = t;
+  S.missions = buildMissions(S.level);
+  if(pendingPenalty) S.missions.unshift(buildPenaltyMission(S.level));
+  S.bonusClaimed = false;
+  S.firstStrikeUsed = false;
+  save(); render();
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewDay(); });
+setInterval(checkNewDay, 60000);
+
+// ---------- azioni ----------
+function createPlayer(){
+  const name = document.getElementById('inp-name').value.trim();
+  if(!name){ document.getElementById('inp-name').focus(); return; }
+  S = defaultSave(name);
+  save(); boot();
+}
+
+function toggleMission(i, ev){
+  const m = S.missions[i];
+
+  if(!m.done){
+    // ── completamento: il Sistema calcola e assegna ──
+    const r = computeReward(m);
+    m.done = true;
+    m.gainPts = r.pts; m.gainXp = r.xp;              // memorizza per revert esatto
+    m.usedFirstStrike = hasAbility('doppio') && !S.firstStrikeUsed && !m.penalty;
+    if(m.usedFirstStrike) S.firstStrikeUsed = true;
+
+    if(!m.penalty) S.stats[m.stat] += r.pts;
+    S.xp += r.xp;
+    S.totalDone++;
+
+    if(ev){
+      const colors={FOR:'var(--str)',RES:'var(--end)',AGI:'var(--agi)',VIT:'var(--vit)',INT:'var(--int)',PEN:'var(--danger)'};
+      const txt = m.penalty ? `PENALITÀ SALDATA +${r.xp} XP`
+                            : `+${r.pts} ${m.stat}  +${r.xp} XP`;
+      floatText(txt, colors[m.stat], ev.clientX, ev.clientY);
+    }
+
+    // ── bonus completamento totale + ricompensa di classe ──
+    if(S.missions.every(x=>x.done) && !S.bonusClaimed){
+      S.bonusClaimed = true;
+      const bonus = completionBonus();
+      S.xp += bonus;
+      let msg = `QUEST COMPLETATA  +${bonus} XP`;
+      if(S.class){
+        S.stats[S.class] += 2;                       // ricompensa di classe
+        msg += `  +2 ${S.class}`;
+      }
+      setTimeout(()=>floatText(msg, 'var(--gold)',
+        window.innerWidth/2-90, window.innerHeight/2), 350);
+    }
+  } else {
+    // ── revert esatto (solo stesso giorno) ──
+    m.done = false;
+    if(!m.penalty) S.stats[m.stat] = Math.max(1, S.stats[m.stat] - (m.gainPts||m.pts));
+    S.xp = Math.max(0, S.xp - (m.gainXp||m.xp));
+    S.totalDone = Math.max(0, S.totalDone - 1);
+    if(m.usedFirstStrike){ S.firstStrikeUsed = false; m.usedFirstStrike = false; }
+    // nota: il bonus giornaliero già riscosso non viene revocato (scelta di design clemente)
+  }
+
+  checkLevelUp();
+  save(); render();
+}
+
+function checkLevelUp(){
+  let leveled = false;
+  while(S.xp >= xpNeeded(S.level)){
+    S.xp -= xpNeeded(S.level);
+    S.level++;
+    for(const k in S.stats) S.stats[k]++;            // +1 a tutte le statistiche
+    leveled = true;
+
+    // nuove abilità sbloccate a questo livello?
+    const newAb = ABILITIES.find(a=>a.lvl===S.level && a.id!=='risveglio');
+    if(newAb) queueOverlay('ABILITÀ SBLOCCATA', `${newAb.icon} ${newAb.name} — ${newAb.desc}`);
+
+    // ── RISVEGLIO: cambio classe al Lv.30 ──
+    if(S.level===30 && !S.class){
+      S.class = pickClass(S.stats);
+      const c = CLASSES[S.class];
+      queueOverlay('RISVEGLIO', `Il Sistema ha analizzato le tue statistiche.\nClasse assegnata: ${c.icon} ${c.name}\n${c.desc}`);
+    }
+  }
+  if(leveled && !overlayQueue.length){
+    queueOverlay('LEVEL UP', `Hai raggiunto il livello ${S.level} · +1 a tutte le statistiche · missioni potenziate da domani`);
+  }
+  flushOverlays();
+}
+
+// ---------- overlay a coda (level up / abilità / risveglio) ----------
+let overlayQueue = [];
+function queueOverlay(title, sub){ overlayQueue.push({title, sub}); }
+function flushOverlays(){
+  if(!overlayQueue.length) return;
+  const o = overlayQueue.shift();
+  document.getElementById('ui-ov-title').textContent = o.title;
+  document.getElementById('ui-ov-sub').textContent = o.sub;
+  const el = document.getElementById('ui-overlay');
+  el.classList.remove('hidden');
+  el.onclick = () => { el.classList.add('hidden'); setTimeout(flushOverlays, 200); };
+  if(navigator.vibrate) navigator.vibrate([80,40,120]);
+}
+
+function floatText(txt,color,x,y){
+  const el=document.createElement('div');
+  el.className='float-pt'; el.textContent=txt;
+  el.style.color=color; el.style.left=clamp(x, 8, window.innerWidth-190)+'px'; el.style.top=(y-20)+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
+}
+
+function toggleInfo(i){
+  document.querySelectorAll('.mission')[i].classList.toggle('open');
+}
+
+// ---------- export / import ----------
+function exportSave(){
+  const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='sistema_save_'+todayStr()+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importSave(){
+  const inp=document.getElementById('inp-import');
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ try{
+        const data = JSON.parse(r.result);
+        S = data.v===2 ? data : migrateV1(data);
+        save(); checkNewDay(); render();
+      } catch(err){ alert('File non valido.'); } };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ---------- render ----------
+function render(){
+  document.getElementById('ui-name').textContent = S.name.toUpperCase();
+  document.getElementById('ui-title').textContent = 'Cacciatore · '+rankTitle(S.level);
+  document.getElementById('ui-lvl').textContent = S.level;
+  const need = xpNeeded(S.level);
+  document.getElementById('ui-xpbar').style.width = Math.min(100, S.xp/need*100)+'%';
+  document.getElementById('ui-xptxt').textContent = S.xp+' / '+need;
+  document.getElementById('ui-streak').textContent = S.streak+(S.streak===1?' giorno':' giorni');
+  document.getElementById('ui-total').textContent = S.totalDone;
+
+  // classe
+  const cbox = document.getElementById('ui-class');
+  if(S.class){
+    const c = CLASSES[S.class];
+    cbox.className='class-box';
+    cbox.innerHTML = `<div class="cname">${c.icon} ${c.name}</div><div style="color:var(--muted);margin-top:3px">${c.desc}</div>`;
+  } else {
+    cbox.className='class-box locked';
+    cbox.innerHTML = `<div class="cname">CLASSE: NON RISVEGLIATA</div>
+      <div style="color:var(--muted);margin-top:3px">Al Lv.30 il Sistema ti assegnerà una classe in base alla tua statistica dominante. Allena ciò che vuoi diventare.</div>`;
+  }
+
+  document.getElementById('ui-qtitle').textContent =
+    isSunday() ? '[ GIORNO DI RECUPERO — il corpo cresce quando riposa ]'
+               : '[ PREPARATI A DIVENTARE PIÙ FORTE ]';
+
+  // avviso penalità
+  const pn = document.getElementById('ui-penalty-notice');
+  if(S.penaltyNotice){ pn.classList.remove('hidden'); pn.textContent = S.penaltyNotice; }
+  else pn.classList.add('hidden');
+
+  // missioni
+  const box=document.getElementById('ui-missions'); box.innerHTML='';
+  S.missions.forEach((m,i)=>{
+    const d=document.createElement('div');
+    d.className='mission'+(m.done?' done':'')+(m.penalty?' penalty':'');
+    const preview = m.penalty ? {pts:0, xp:m.xp} : (m.done ? {pts:m.gainPts, xp:m.gainXp} : computeReward(m));
+    d.innerHTML=`
+      <div class="check" onclick="toggleMission(${i},event)">✓</div>
+      <div class="m-body">
+        <div class="m-name">${m.name}</div>
+        <div class="m-target">${m.target}</div>
+        <button class="info-btn" onclick="toggleInfo(${i})">esecuzione ▾</button>
+        <div class="m-info">${m.info}</div>
+      </div>
+      <div class="m-reward">
+        <span class="tag ${m.stat}">${m.penalty?'PENALITÀ':'+'+preview.pts+' '+m.stat}</span>
+        <span class="xp-tag">+${preview.xp} XP</span>
+      </div>`;
+    box.appendChild(d);
+  });
+
+  const done=S.missions.filter(m=>m.done).length, tot=S.missions.length;
+  const b=document.getElementById('ui-bonus');
+  if(S.bonusClaimed){
+    b.className='bonus-line won';
+    b.textContent='✦ QUEST GIORNALIERA COMPLETATA — bonus riscosso ✦';
+  } else {
+    b.className='bonus-line';
+    b.textContent=`Completa tutto (${done}/${tot}) per il bonus: +${completionBonus()} XP`
+      + (S.class ? ` +2 ${S.class}` : '');
+  }
+
+  // stats
+  const sbox=document.getElementById('ui-stats'); sbox.innerHTML='';
+  const labels={FOR:'Forza',RES:'Resistenza',AGI:'Agilità',VIT:'Vitalità',INT:'Intelligenza'};
+  const maxRef=Math.max(60, ...Object.values(S.stats));
+  for(const k of ['FOR','RES','AGI','VIT','INT']){
+    const row=document.createElement('div');
+    row.className='stat s-'+k;
+    row.innerHTML=`<span class="abbr" title="${labels[k]}">${k}</span>
+      <div class="sbar"><i style="width:${S.stats[k]/maxRef*100}%"></i></div>
+      <span class="val">${S.stats[k]}</span>`;
+    sbox.appendChild(row);
+  }
+
+  // abilità
+  const kbox=document.getElementById('ui-skills'); kbox.innerHTML='';
+  ABILITIES.forEach(a=>{
+    const unlocked = a.id==='fiamma' ? S.streak>=7
+                   : a.id==='risveglio' ? S.level>=30
+                   : S.level >= a.lvl;
+    const req = a.req || ('Livello '+a.lvl);
+    const d=document.createElement('div');
+    d.className='skill'+(unlocked?'':' locked');
+    d.innerHTML=`
+      <div class="s-icon">${unlocked ? a.icon : '🔒'}</div>
+      <div>
+        <div class="s-name">${a.name}</div>
+        <div class="s-desc">${a.desc}</div>
+        <div class="s-req">${unlocked ? '● ATTIVA' : 'Richiede: '+req}</div>
+      </div>`;
+    kbox.appendChild(d);
+  });
+}
+
+// ---------- boot ----------
+function boot(){
+  S = S || load();
+  if(!S){
+    document.getElementById('scr-onboard').classList.remove('hidden');
+    document.getElementById('scr-main').classList.add('hidden');
+    return;
+  }
+  checkNewDay();
+  document.getElementById('scr-onboard').classList.add('hidden');
+  document.getElementById('scr-main').classList.remove('hidden');
+  render();
+}
+boot();
+</script>
+</body>
+</html>
