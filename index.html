@@ -334,11 +334,25 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
       <div id="ui-hist"></div>
     </div>
 
-    <div class="row2">
-      <button class="btn ghost" onclick="exportSave()">ESPORTA DATI</button>
-      <button class="btn ghost" onclick="importSave()">IMPORTA DATI</button>
+    <!-- ═══ SALVATAGGIO ═══ -->
+    <div class="sys"><span class="cb"></span>
+      <div class="sys-head"><div class="icon">▣</div><h2>Salvataggio</h2></div>
+      <p class="sub" id="ui-save-line">Salvataggio automatico attivo.</p>
+      <div class="row2" style="margin-top:10px">
+        <button class="btn ghost" onclick="exportSave()">ESPORTA</button>
+        <button class="btn ghost" onclick="importSave()">IMPORTA</button>
+        <button class="btn ghost" onclick="toggleBackups()">BACKUP</button>
+      </div>
+      <div id="ui-backups" class="hidden" style="margin-top:10px"></div>
     </div>
     <input type="file" id="inp-import" accept=".json" class="hidden">
+  </div>
+</div>
+
+<div id="ui-splash" class="overlay hidden">
+  <div class="sys" style="min-width:280px;max-width:360px"><span class="cb"></span>
+    <div class="sys-head"><div class="icon">⇄</div><h2>Accesso</h2></div>
+    <p id="ui-splash-msg" class="sub" style="font-size:15.5px;line-height:1.6">Collegamento al Sistema...</p>
   </div>
 </div>
 
@@ -620,7 +634,38 @@ const store = (() => {
     return { get: k => mem[k] ?? null, set: (k,v) => { mem[k]=v; } };
   }
 })();
-const KEY='sl_save_v4', OLD_KEYS=['sl_save_v3','sl_save_v2','sl_save_v1'];
+const KEY='sl_save_v4', OLD_KEYS=['sl_save_v3','sl_save_v2','sl_save_v1'], KEY_BK='sl_backups';
+
+// ── livello 2 di salvataggio: IndexedDB (più durevole di localStorage
+//    su Android; se non disponibile, fallback in memoria) ──
+const idb = {
+  db:null, mem:{},
+  open(){ return new Promise(res=>{
+    if(typeof indexedDB==='undefined'){ res(null); return; }
+    try{
+      const rq=indexedDB.open('sistema-db',1);
+      rq.onupgradeneeded=()=>{ rq.result.createObjectStore('kv'); };
+      rq.onsuccess=()=>{ idb.db=rq.result; res(rq.result); };
+      rq.onerror=()=>res(null);
+    }catch(e){ res(null); }
+  }); },
+  set(k,v){ return new Promise(res=>{
+    if(!idb.db){ idb.mem[k]=v; res(true); return; }
+    try{
+      const tx=idb.db.transaction('kv','readwrite');
+      tx.objectStore('kv').put(v,k);
+      tx.oncomplete=()=>res(true); tx.onerror=()=>res(false);
+    }catch(e){ idb.mem[k]=v; res(false); }
+  }); },
+  get(k){ return new Promise(res=>{
+    if(!idb.db){ res(idb.mem[k] ?? null); return; }
+    try{
+      const rq=idb.db.transaction('kv').objectStore('kv').get(k);
+      rq.onsuccess=()=>res(rq.result ?? null); rq.onerror=()=>res(null);
+    }catch(e){ res(idb.mem[k] ?? null); }
+  }); }
+};
+let persistGranted=false;
 const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 const isSunday = () => new Date().getDay()===0;
 const isSaturday = () => new Date().getDay()===6;
@@ -733,16 +778,41 @@ function migrateOld(old){
   s.day='';
   return s;
 }
-function load(){
-  let raw=store.get(KEY);
-  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+function parseSave(raw){ if(!raw) return null; try{ return JSON.parse(raw); }catch(e){ return null; } }
+function loadLocalAny(){
+  let s=parseSave(store.get(KEY));
+  if(s) return s;
   for(const k of OLD_KEYS){
-    raw=store.get(k);
-    if(raw){ try { return migrateOld(JSON.parse(raw)); } catch(e){} }
+    const o=parseSave(store.get(k));
+    if(o){ try{ return migrateOld(o); }catch(e){} }
   }
   return null;
 }
-function save(){ store.set(KEY, JSON.stringify(S)); }
+// carica il salvataggio più recente tra localStorage e IndexedDB
+async function loadBest(){
+  const ls=loadLocalAny();
+  const db=parseSave(await idb.get(KEY));
+  if(ls && db) return (db.savedAt||0)>(ls.savedAt||0) ? db : ls;
+  return ls || db || null;
+}
+function save(){
+  if(!S) return;
+  S.savedAt=Date.now();
+  const json=JSON.stringify(S);
+  store.set(KEY, json);   // livello 1: localStorage (istantaneo)
+  idb.set(KEY, json);     // livello 2: IndexedDB (durevole)
+  updateSaveLine();
+}
+// backup automatico a rotazione (ultimi 7 giorni), creato al cambio di giorno
+function snapshotBackup(){
+  try{
+    const list=parseSave(store.get(KEY_BK))||[];
+    list.push({ t:Date.now(), day:S.day, lv:S.level, data:JSON.parse(JSON.stringify(S)) });
+    while(list.length>7) list.shift();
+    const json=JSON.stringify(list);
+    store.set(KEY_BK, json); idb.set(KEY_BK, json);
+  }catch(e){}
+}
 
 function checkNewDay(){
   if(!S) return;
@@ -752,6 +822,8 @@ function checkNewDay(){
   const hadMissions=S.missions && S.missions.length>0;
   const allDone=hadMissions && S.missions.every(m=>m.done);
   let pendingPenalty=false;
+
+  if(hadMissions && S.day!=='') snapshotBackup();   // backup del giorno concluso
 
   if(hadMissions && S.day!==''){
     // ── storico: registra il giorno concluso ──
@@ -786,7 +858,12 @@ function checkNewDay(){
   S.dungeon=null;
   save(); render();
 }
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewDay(); });
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ if(S) save(); }        // uscita dall'app → salva
+  else checkNewDay();                          // rientro → verifica il giorno
+});
+if(typeof window!=='undefined' && window.addEventListener)
+  window.addEventListener('pagehide', ()=>{ if(S) save(); });
 setInterval(checkNewDay, 60000);
 
 // ─────────────────────────────────────────
@@ -796,6 +873,7 @@ function createPlayer(){
   const name=document.getElementById('inp-name').value.trim();
   if(!name){ document.getElementById('inp-name').focus(); return; }
   S=defaultSave(name);
+  splashDone=true;            // primo accesso: niente schermata "bentornato"
   save(); boot();
 }
 
@@ -902,6 +980,46 @@ function floatText(txt,color,x,y){
   setTimeout(()=>el.remove(),1300);
 }
 function toggleInfo(i){ document.querySelectorAll('.mission')[i].classList.toggle('open'); }
+
+// ── pannello Salvataggio ──
+function updateSaveLine(){
+  const el=document.getElementById('ui-save-line'); if(!el||!S) return;
+  let hh='—';
+  if(S.savedAt){
+    const t=new Date(S.savedAt);
+    hh=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
+  }
+  el.innerHTML='▣ Salvataggio automatico attivo — ultimo: <b style="color:var(--ice)">'+hh+'</b>'
+    +'<br>Archivio doppio (locale + database)'
+    +(persistGranted?' · memoria protetta dal sistema ✓':'')
+    +' · backup giornalieri: ultimi 7';
+}
+function toggleBackups(){
+  const box=document.getElementById('ui-backups');
+  if(!box.classList.contains('hidden')){ box.classList.add('hidden'); return; }
+  const list=parseSave(store.get(KEY_BK))||[];
+  if(!list.length){
+    box.innerHTML='<p class="sub">Nessun backup ancora: se ne crea uno automatico a ogni cambio di giorno (vengono conservati gli ultimi 7).</p>';
+  } else {
+    box.innerHTML=list.slice().reverse().map((b,i)=>{
+      const idx=list.length-1-i;
+      return `<div class="hist-row">
+        <span><b>${b.day}</b></span><span>Lv.${b.lv}</span>
+        <span>${new Date(b.t).toLocaleTimeString().slice(0,5)}</span>
+        <span><button class="info-btn" onclick="restoreBackup(${idx})">RIPRISTINA</button></span>
+      </div>`;
+    }).join('');
+  }
+  box.classList.remove('hidden');
+}
+function restoreBackup(i){
+  const list=parseSave(store.get(KEY_BK))||[];
+  const b=list[i]; if(!b) return;
+  if(!confirm('Ripristinare il salvataggio del '+b.day+' (Lv.'+b.lv+')? I progressi attuali verranno sovrascritti.')) return;
+  S=b.data;
+  save(); checkNewDay(); render();
+  document.getElementById('ui-backups').classList.add('hidden');
+}
 
 function exportSave(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
@@ -1080,19 +1198,50 @@ function renderHistory(){
 }
 
 // ─────────────────────────────────────────
-// 9. BOOT
+// 9. BOOT — accesso automatico ai progressi
 // ─────────────────────────────────────────
-function boot(){
-  S = S || load();
+let splashDone=false;
+function showSplash(){
+  if(splashDone || !S) return;
+  splashDone=true;
+  const el=document.getElementById('ui-splash');
+  document.getElementById('ui-splash-msg').innerHTML =
+    'Bentornato, <b style="color:var(--ice)">'+String(S.name).toUpperCase()+'</b>'
+    +'<br>Lv.'+S.level+' · streak '+S.streak+' · '+S.totalDone+' quest'
+    +'<br><span style="color:var(--ok)">Progressi caricati ✓</span>';
+  el.classList.remove('hidden');
+  const close=()=>el.classList.add('hidden');
+  el.onclick=close;
+  setTimeout(close, 1500);
+}
+
+async function boot(){
+  await idb.open();
+
+  // riallinea i backup se un livello è stato svuotato
+  if(!store.get(KEY_BK)){
+    const bk=await idb.get(KEY_BK);
+    if(bk) store.set(KEY_BK, bk);
+  }
+
+  if(!S) S = await loadBest();
   if(!S){
     document.getElementById('scr-onboard').classList.remove('hidden');
     document.getElementById('scr-main').classList.add('hidden');
     return;
   }
+
+  // chiede al sistema operativo di NON cancellare i dati per liberare spazio
+  if(typeof navigator!=='undefined' && navigator.storage && navigator.storage.persist){
+    try{ persistGranted = await navigator.storage.persist(); }catch(e){}
+  }
+
   checkNewDay();
+  save();                       // riallinea subito entrambi i livelli
   document.getElementById('scr-onboard').classList.add('hidden');
   document.getElementById('scr-main').classList.remove('hidden');
   render();
+  showSplash();
 }
 boot();
 </script>
