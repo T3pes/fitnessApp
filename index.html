@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#060b16">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,15 +20,21 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,.check,.info-btn{touch-action:manipulation}
 body{
   background:var(--bg); color:var(--text);
   font-family:'Rajdhani',system-ui,sans-serif; font-size:17px;
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,120,220,.16), transparent),
     repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,200,255,.012) 3px 4px);
-  min-height:100dvh; padding-bottom:40px;
+  min-height:100dvh;
+  padding-bottom:calc(40px + env(safe-area-inset-bottom,0px));
 }
-.wrap{max-width:520px;margin:0 auto;padding:14px}
+.wrap{
+  max-width:520px;margin:0 auto;
+  padding:calc(14px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 14px calc(14px + env(safe-area-inset-left,0px));
+}
 
 /* ── System window with corner brackets ── */
 .sys{
@@ -110,9 +116,9 @@ body{
 .mission.dungeon{border-color:#5b2a6e;background:rgba(60,20,90,.14)}
 .mission.dungeon.done,.mission.penalty.done{border-color:rgba(56,224,139,.5)}
 .check{
-  min-width:30px;height:30px;border:2px solid var(--glow);cursor:pointer;
+  min-width:44px;height:44px;border:2px solid var(--glow);cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:transparent;
-  font-weight:900;font-size:18px;transition:all .2s;flex-shrink:0;
+  font-weight:900;font-size:22px;transition:all .2s;flex-shrink:0;
 }
 .mission.penalty .check{border-color:var(--danger)}
 .mission.dungeon .check{border-color:var(--purple)}
@@ -138,8 +144,8 @@ body{
   display:none;border-top:1px dashed var(--line);margin-top:8px;flex-basis:100%;
 }
 .mission.open .m-info{display:block}
-.info-btn{background:none;border:1px solid var(--line);color:var(--muted);font-size:11px;
-  padding:2px 8px;cursor:pointer;letter-spacing:1px;font-family:'Rajdhani';margin-top:3px}
+.info-btn{background:none;border:1px solid var(--line);color:var(--muted);font-size:12px;
+  padding:6px 12px;cursor:pointer;letter-spacing:1px;font-family:'Rajdhani';margin-top:5px}
 .bonus-line{
   text-align:center;font-size:13px;color:var(--muted);letter-spacing:1px;
   padding:8px;border:1px dashed var(--line);margin-top:6px;
@@ -148,7 +154,7 @@ body{
 
 /* ── Guida visiva SVG ── */
 .ex-svg{
-  display:block;width:100%;max-width:230px;margin:4px auto 8px;
+  display:block;width:100%;max-width:290px;margin:4px auto 8px;
   background:rgba(3,10,22,.6);border:1px solid var(--line);
 }
 .ex-svg .fB{opacity:0}
@@ -225,7 +231,8 @@ input[type=text]{
 }
 input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-soft)}
 .hidden{display:none!important}
-.row2{display:flex;gap:10px}
+.row2{display:flex;gap:10px;flex-wrap:wrap}
+.row2 .btn{flex:1 1 30%;min-width:96px}
 
 /* ── Float points ── */
 .float-pt{
@@ -247,6 +254,47 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
   animation:zoomIn .5s cubic-bezier(.2,1.6,.4,1);
 }
 @keyframes zoomIn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+/* ── RESPONSIVE ── */
+/* telefoni stretti (≤390px): tutto più compatto, niente traboccamenti */
+@media (max-width:390px){
+  body{font-size:16px}
+  .wrap{padding-left:calc(10px + env(safe-area-inset-left,0px));padding-right:calc(10px + env(safe-area-inset-right,0px))}
+  .sys{padding:13px 10px}
+  .sys-head h2{font-size:12px;letter-spacing:3px}
+  .pname{font-size:15px}
+  .lvl{font-size:13px}
+  .badge{font-size:11px;padding:3px 7px}
+  .mission{gap:9px;padding:11px 8px}
+  .m-name{font-size:15px}
+  .m-target{font-size:11.5px}
+  .tag{font-size:10px;padding:2px 5px}
+  .xp-tag{font-size:11px}
+  .btn{font-size:12px;letter-spacing:2px;padding:12px 8px}
+  .btn.ghost{font-size:11px;letter-spacing:1px}
+  .stat{grid-template-columns:42px 1fr 38px;gap:8px}
+  .hist-row{grid-template-columns:58px 40px 1fr auto;gap:6px;font-size:12.5px}
+  .lvlup-txt{font-size:26px;letter-spacing:4px}
+  .float-pt{font-size:14px}
+  .q-alert{font-size:10px;letter-spacing:2px}
+}
+/* schermi molto stretti (≤330px) */
+@media (max-width:330px){
+  .m-reward{flex-direction:row;gap:6px;flex-basis:100%;justify-content:flex-end;margin-top:6px}
+  .check{min-width:40px;height:40px}
+}
+/* tablet / desktop (≥900px): due colonne a mosaico */
+@media (min-width:900px){
+  .wrap{max-width:1060px}
+  #scr-main{columns:2;column-gap:16px}
+  #scr-main>.sys{break-inside:avoid;-webkit-column-break-inside:avoid}
+  #scr-onboard>.sys{max-width:480px;margin-left:auto;margin-right:auto}
+}
+/* telefono in orizzontale: onboarding senza margine gigante */
+@media (max-height:520px) and (orientation:landscape){
+  #scr-onboard>.sys{margin-top:3vh!important}
+  .overlay .sys{max-height:90vh;overflow:auto}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
