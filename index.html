@@ -94,7 +94,7 @@ body{
 .mission{
   display:flex;align-items:center;gap:12px;padding:12px 10px;
   border:1px solid var(--line);background:rgba(4,12,26,.5);margin-bottom:9px;
-  transition:all .25s;
+  transition:all .25s;flex-wrap:wrap;
 }
 .mission.done{border-color:rgba(56,224,139,.5);background:rgba(20,60,45,.18)}
 .mission.penalty{border-color:var(--danger);background:rgba(80,10,25,.15)}
@@ -119,7 +119,10 @@ body{
 .tag.INT{color:var(--int);border-color:var(--int)}
 .tag.PEN{color:var(--danger);border-color:var(--danger)}
 .xp-tag{font-size:12px;color:var(--muted);letter-spacing:1px}
-.m-info{font-size:13.5px;color:var(--muted);line-height:1.45;padding:8px 4px 2px;display:none;border-top:1px dashed var(--line);margin-top:8px}
+.m-info{
+  font-size:13.5px;color:var(--muted);line-height:1.5;padding:8px 4px 2px;
+  display:none;border-top:1px dashed var(--line);margin-top:8px;flex-basis:100%;
+}
 .mission.open .m-info{display:block}
 .info-btn{background:none;border:1px solid var(--line);color:var(--muted);font-size:11px;
   padding:2px 8px;cursor:pointer;letter-spacing:1px;font-family:'Rajdhani';margin-top:3px}
@@ -128,6 +131,17 @@ body{
   padding:8px;border:1px dashed var(--line);margin-top:6px;
 }
 .bonus-line.won{color:var(--gold);border-color:var(--gold);text-shadow:0 0 8px rgba(255,215,106,.3)}
+
+/* ── Guida visiva SVG (2 fotogrammi) ── */
+.ex-svg{
+  display:block;width:100%;max-width:230px;margin:4px auto 8px;
+  background:rgba(3,10,22,.6);border:1px solid var(--line);
+}
+.ex-svg .fB{opacity:0}
+.ex-svg.anim .fA{animation:swapA 2s steps(1) infinite}
+.ex-svg.anim .fB{animation:swapB 2s steps(1) infinite}
+@keyframes swapA{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes swapB{0%,49%{opacity:0}50%,100%{opacity:1}}
 
 /* ── Stats ── */
 .stat{display:grid;grid-template-columns:52px 1fr 46px;gap:10px;align-items:center;margin-bottom:11px}
@@ -198,7 +212,6 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
   animation:zoomIn .5s cubic-bezier(.2,1.6,.4,1);
 }
 @keyframes zoomIn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
-.lvlup-sub{color:var(--ice);letter-spacing:2px;font-size:16px;line-height:1.5}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -216,8 +229,8 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
       <input type="text" id="inp-name" maxlength="16" placeholder="Inserisci il tuo nome" autocomplete="off">
       <button class="btn" onclick="createPlayer()">ACCETTA</button>
       <p class="sub" style="margin-top:12px;font-size:12px">
-        Missioni giornaliere · punti automatici · abilità sbloccabili · cambio classe al Lv.30.<br>
-        Attenzione: le quest non completate comportano una penalità.
+        Missioni sempre diverse, tutte a corpo libero e fattibili in casa · guide visive animate ·
+        abilità sbloccabili · cambio classe al Lv.30 · penalità per le quest fallite.
       </p>
     </div>
   </div>
@@ -266,21 +279,247 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
   </div>
 </div>
 
-<div id="ui-overlay" class="overlay hidden" onclick="this.classList.add('hidden')">
+<div id="ui-overlay" class="overlay hidden">
   <div class="lvlup-txt" id="ui-ov-title">LEVEL UP</div>
-  <div class="lvlup-sub" id="ui-ov-sub"></div>
+  <div class="lvlup-sub sub" id="ui-ov-sub" style="font-size:16px;color:var(--ice);line-height:1.5"></div>
   <div class="sub" style="font-size:13px">— tocca per continuare —</div>
 </div>
 
 <script>
 /* ═════════════════════════════════════════════════════════════
-   IL SISTEMA v2 — daily quest tracker stile Solo Leveling
-   Novità v2: statistica INT · classi al Lv.30 · ricompense di
-   classe · penalità · abilità passive con effetti reali
-   Persistenza: localStorage (fallback in-memory) + migrazione v1
+   IL SISTEMA v3
+   Novità: guide visive SVG animate per ogni esercizio ·
+   catalogo 25+ esercizi a corpo libero (casa, zero attrezzi) ·
+   rotazione giornaliera con RNG deterministico (mai la stessa
+   selezione del giorno prima). Persistenza localStorage,
+   migrazione automatica da v1 e v2.
    ═════════════════════════════════════════════════════════════ */
 
-// ---------- storage sicuro ----------
+// ─────────────────────────────────────────
+// 1. GUIDE VISIVE — renderer stick-figure
+// ─────────────────────────────────────────
+const _ST  = 'stroke="#7fe7ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+const _ST2 = 'stroke="#4a90c2" stroke-width="2" stroke-linecap="round" fill="none"';
+const _GROUND = `<line x1="6" y1="72" x2="114" y2="72" ${_ST2} opacity=".6"/>`;
+
+const _limb = (a,b,c)=>`<polyline points="${a[0]},${a[1]} ${b[0]},${b[1]} ${c[0]},${c[1]}" ${_ST}/>`;
+function _fig(p){
+  let s = `<circle cx="${p.head[0]}" cy="${p.head[1]}" r="5" ${_ST}/>`;
+  s += `<line x1="${p.neck[0]}" y1="${p.neck[1]}" x2="${p.hip[0]}" y2="${p.hip[1]}" ${_ST}/>`;
+  for(const a of p.arms||[]) s += _limb(p.neck, a[0], a[1]);
+  for(const l of p.legs||[]) s += _limb(p.hip, l[0], l[1]);
+  return s;
+}
+const _mir = p => JSON.parse(JSON.stringify(p), (k,v)=> Array.isArray(v)&&v.length===2&&typeof v[0]==='number' ? [120-v[0], v[1]] : v);
+
+const P = {
+stand:{head:[60,15],neck:[60,22],hip:[60,46],arms:[[[55,33],[53,44]],[[65,33],[67,44]]],legs:[[[57,59],[55,72]],[[63,59],[65,72]]]},
+squat:{head:[55,28],neck:[58,35],hip:[64,53],arms:[[[71,37],[83,37]],[[71,40],[83,40]]],legs:[[[52,59],[51,72]],[[55,61],[57,72]]]},
+pushup_top:{head:[22,44],neck:[30,48],hip:[64,55],arms:[[[29,59],[29,70]],[[33,59],[33,70]]],legs:[[[80,60],[97,70]],[[80,62],[95,71]]]},
+pushup_low:{head:[20,57],neck:[28,60],hip:[64,63],arms:[[[20,66],[29,70]],[[24,68],[33,70]]],legs:[[[80,66],[97,71]],[[80,67],[95,72]]]},
+pike:{head:[27,55],neck:[34,50],hip:[62,33],arms:[[[28,60],[24,70]],[[32,61],[28,71]]],legs:[[[74,48],[88,70]],[[76,50],[90,71]]]},
+plank:{head:[22,49],neck:[30,52],hip:[64,58],arms:[[[26,68],[40,68]],[[30,69],[42,69]]],legs:[[[80,62],[97,70]],[[80,64],[95,71]]]},
+sideplank:{head:[25,36],neck:[31,41],hip:[60,55],arms:[[[29,55],[27,70]],[[38,30],[42,19]]],legs:[[[76,62],[92,70]],[[77,63],[93,71]]]},
+lunge:{head:[58,17],neck:[58,24],hip:[58,48],arms:[[[53,36],[55,45]],[[63,36],[61,45]]],legs:[[[72,58],[72,72]],[[47,63],[35,71]]]},
+bridge:{head:[21,67],neck:[28,66],hip:[56,51],arms:[[[36,70],[44,70]],[[34,71],[42,71]]],legs:[[[70,56],[76,71]],[[72,57],[78,72]]]},
+crunch_dn:{head:[23,63],neck:[30,64],hip:[58,68],arms:[[[33,57],[26,59]],[[35,58],[28,60]]],legs:[[[72,54],[80,71]],[[74,55],[82,72]]]},
+crunch_up:{head:[33,51],neck:[38,55],hip:[58,67],arms:[[[46,54],[52,52]],[[47,56],[53,54]]],legs:[[[72,54],[80,71]],[[74,55],[82,72]]]},
+legraise_up:{head:[21,66],neck:[29,67],hip:[56,68],arms:[[[38,70],[46,70]],[[36,71],[44,71]]],legs:[[[62,52],[66,37]],[[64,53],[68,38]]]},
+legraise_dn:{head:[21,66],neck:[29,67],hip:[56,68],arms:[[[38,70],[46,70]],[[36,71],[44,71]]],legs:[[[70,62],[84,64]],[[72,63],[86,65]]]},
+superman_up:{head:[27,55],neck:[34,59],hip:[62,65],arms:[[[23,55],[12,50]],[[25,57],[14,52]]],legs:[[[76,61],[92,55]],[[78,62],[94,56]]]},
+superman_dn:{head:[24,62],neck:[32,65],hip:[62,68],arms:[[[22,64],[12,62]],[[24,65],[14,63]]],legs:[[[76,67],[92,64]],[[78,68],[94,65]]]},
+birddog:{head:[30,41],neck:[38,46],hip:[64,50],arms:[[[37,58],[36,70]],[[24,42],[12,37]]],legs:[[[66,60],[70,71]],[[80,47],[96,41]]]},
+mclimb_a:{head:[22,44],neck:[30,48],hip:[64,55],arms:[[[29,59],[29,70]],[[33,59],[33,70]]],legs:[[[47,55],[51,64]],[[80,62],[97,71]]]},
+mclimb_b:{head:[22,44],neck:[30,48],hip:[64,55],arms:[[[29,59],[29,70]],[[33,59],[33,70]]],legs:[[[80,60],[97,70]],[[49,57],[53,66]]]},
+burpee_dn:{head:[49,43],neck:[53,48],hip:[64,58],arms:[[[47,60],[44,70]],[[50,61],[47,71]]],legs:[[[55,63],[58,72]],[[57,64],[60,72]]]},
+jump:{head:[60,10],neck:[60,17],hip:[60,40],arms:[[[53,12],[49,7]],[[67,12],[71,7]]],legs:[[[57,53],[56,64]],[[63,53],[64,64]]]},
+highknee_a:{head:[60,15],neck:[60,22],hip:[60,46],arms:[[[68,32],[74,26]],[[52,34],[47,41]]],legs:[[[52,45],[54,57]],[[62,58],[62,72]]]},
+jjack_out:{head:[60,15],neck:[60,22],hip:[60,46],arms:[[[49,20],[41,13]],[[71,20],[79,13]]],legs:[[[52,59],[46,72]],[[68,59],[74,72]]]},
+skater:{head:[49,26],neck:[52,33],hip:[58,50],arms:[[[43,40],[37,46]],[[62,32],[68,27]]],legs:[[[48,60],[44,72]],[[68,58],[80,66]]]},
+wallsit:{head:[47,26],neck:[45,33],hip:[45,52],arms:[[[49,42],[52,48]],[[50,44],[53,50]]],legs:[[[60,52],[60,72]],[[62,53],[62,72]]]},
+run_a:{head:[61,20],neck:[58,27],hip:[54,46],arms:[[[66,33],[72,27]],[[48,37],[43,45]]],legs:[[[66,56],[70,68]],[[44,54],[35,62]]]},
+walk_a:{head:[60,16],neck:[60,23],hip:[58,46],arms:[[[65,34],[69,42]],[[53,34],[49,42]]],legs:[[[66,58],[70,72]],[[50,58],[46,72]]]},
+stretch_a:{head:[60,42],neck:[55,47],hip:[44,66],arms:[[[66,53],[74,58]],[[67,55],[75,60]]],legs:[[[63,68],[82,68]],[[64,69],[83,69]]]},
+stretch_b:{head:[66,48],neck:[60,52],hip:[44,66],arms:[[[72,57],[81,61]],[[73,59],[82,63]]],legs:[[[63,68],[82,68]],[[64,69],[83,69]]]},
+sidestretch:{head:[65,17],neck:[63,24],hip:[58,48],arms:[[[70,17],[76,11]],[[68,19],[74,13]]],legs:[[[56,59],[54,72]],[[62,59],[64,72]]]},
+meditate:{head:[60,30],neck:[60,37],hip:[60,60],arms:[[[51,49],[47,57]],[[69,49],[73,57]]],legs:[[[46,63],[64,67]],[[74,63],[56,67]]]},
+sit_read:{head:[57,32],neck:[59,39],hip:[60,60],arms:[[[51,48],[50,52]],[[69,48],[68,52]]],legs:[[[46,63],[64,67]],[[74,63],[56,67]]]},
+lie:{head:[24,64],neck:[31,65],hip:[58,66],arms:[[[40,68],[46,68]],[[38,69],[44,69]]],legs:[[[74,64],[90,66]],[[76,65],[92,67]]]}
+};
+
+const _arrowUD = x=>`<path d="M${x},38 v14 M${x-4},42 l4,-4 4,4 M${x-4},48 l4,4 4,-4" ${_ST2}/>`;
+const EXTRA = {
+  pushup_top:_arrowUD(58), pushup_low:_arrowUD(58), pike:_arrowUD(100),
+  wallsit:`<line x1="38" y1="18" x2="38" y2="72" ${_ST2}/>`,
+  jump:`<path d="M50,68 l4,3 M70,68 l-4,3 M60,69 v3" ${_ST2}/>`,
+  sit_read:`<path d="M48,50 L59,55 L70,50 M48,50 L48,44 L59,49 L70,44 L70,50 M59,55 L59,49" ${_ST2}/>`,
+  meditate:`<circle cx="60" cy="30" r="10" ${_ST2} opacity=".35"/><circle cx="60" cy="30" r="14" ${_ST2} opacity=".18"/>`,
+  walk_a:`<circle cx="102" cy="16" r="6" ${_ST2}/><path d="M102,5 v-2 M102,29 v-2 M91,16 h-2 M113,16 h2 M94,8 l-1.5,-1.5 M110,8 l1.5,-1.5 M94,24 l-1.5,1.5 M110,24 l1.5,1.5" ${_ST2}/>`,
+  lie:`<text x="86" y="58" fill="#4a90c2" font-family="monospace" font-size="11">z z</text><text x="94" y="48" fill="#4a90c2" font-family="monospace" font-size="14">Z</text>`
+};
+const ICONS = {
+  water:`<path d="M48,26 h24 l-4,36 h-16 z" ${_ST}/><path d="M50,42 h20" ${_ST2}/><path d="M84,30 c0,5 -4,7 -4,11 a4,4 0 0 0 8,0 c0,-4 -4,-6 -4,-11z" ${_ST2}/>`,
+  bulb:`<circle cx="60" cy="34" r="11" ${_ST}/><path d="M56,45 v6 h8 v-6 M56,54 h8" ${_ST}/><path d="M60,16 v-5 M42,34 h-5 M78,34 h5 M47,21 l-4,-4 M73,21 l4,-4" ${_ST2}/>`,
+  pencil:`<path d="M40,60 L72,28 l8,8 L48,68 l-11,3z M40,60 l8,8" ${_ST}/><path d="M68,32 l8,8" ${_ST2}/>`
+};
+const _fr = (pose, ex)=> (pose?_fig(P[pose]):'') + (EXTRA[ex ?? pose] || '');
+
+// mappa arte: id → [frame A, frame B?]
+const ART = {
+  pushup:[_fr('pushup_top'),_fr('pushup_low')],
+  pike:[_fr('pike'),_fr('pushup_top')],
+  squat:[_fr('stand'),_fr('squat')],
+  lunge:[_fr('stand'),_fr('lunge')],
+  bridge:[_fr('lie'),_fr('bridge')],
+  wallsit:[_fr('wallsit')],
+  plank:[_fr('plank')],
+  sideplank:[_fr('sideplank')],
+  crunch:[_fig(P.crunch_dn),_fig(P.crunch_up)],
+  legraise:[_fig(P.legraise_up),_fig(P.legraise_dn)],
+  superman:[_fig(P.superman_dn),_fig(P.superman_up)],
+  birddog:[_fr('birddog'),_fig(_mir(P.birddog))],
+  mclimber:[_fig(P.mclimb_a),_fig(P.mclimb_b)],
+  burpee:[_fig(P.burpee_dn),_fr('jump')],
+  highknees:[_fig(P.highknee_a),_fig(_mir(P.highknee_a))],
+  jjack:[_fr('stand'),_fr('jjack_out')],
+  skater:[_fr('skater'),_fig(_mir(P.skater))],
+  squatjump:[_fr('squat'),_fr('jump')],
+  run:[_fig(P.run_a),_fig(_mir(P.run_a))],
+  walk:[_fr('walk_a')],
+  stretch:[_fig(P.stretch_a),_fig(P.stretch_b)],
+  sidestretch:[_fr('sidestretch'),_fig(_mir(P.sidestretch))],
+  meditate:[_fr('meditate')],
+  read:[_fr('sit_read')],
+  study:[ICONS.bulb],
+  journal:[ICONS.pencil],
+  water:[ICONS.water],
+  sleep:[_fr('lie')]
+};
+function exSvg(artId){
+  const f = ART[artId]; if(!f) return '';
+  const anim = f.length>1;
+  return `<svg viewBox="0 0 120 80" class="ex-svg${anim?' anim':''}" aria-hidden="true">
+    ${_GROUND}<g class="fA">${f[0]}</g>${anim?`<g class="fB">${f[1]}</g>`:''}</svg>`;
+}
+
+// ─────────────────────────────────────────
+// 2. CATALOGO ESERCIZI (personal trainer)
+//    Tutti a corpo libero, in casa, zero attrezzi.
+//    Progressione ~5-10%/livello con tetti di sicurezza.
+// ─────────────────────────────────────────
+const L = (base, inc, cap) => l => Math.min(base + Math.round(inc*l), cap);
+const EX = {
+// ── SPINTA (FOR) ──
+pushup:{name:'Flessioni',stat:'FOR',pts:3,xp:20,art:'pushup',t:L(10,2,80),u:'rip.',
+ info:'1) Mani a terra sotto le spalle, corpo in linea retta, addome contratto. 2) Scendi finché il petto sfiora il pavimento, gomiti a ~45°. 3) Spingi e risali. Troppo dura? Falla sulle ginocchia o con le mani sul muro: conta uguale.'},
+pushup_wide:{name:'Flessioni presa larga',stat:'FOR',pts:3,xp:20,art:'pushup',t:L(8,2,70),u:'rip.',
+ info:'1) Come le flessioni classiche ma con le mani più larghe delle spalle. 2) Scendi controllando, senti lavorare il petto. 3) Risali senza bloccare i gomiti.'},
+pushup_diamond:{name:'Flessioni diamante',stat:'FOR',pts:4,xp:22,art:'pushup',t:L(6,1.5,50),u:'rip.',
+ info:'1) Mani unite sotto il petto, indici e pollici a formare un rombo. 2) Gomiti vicini al corpo, scendi lento. 3) Spingi con i tricipiti. La variante più dura: se non ci arrivi, falla sulle ginocchia.'},
+pike:{name:'Pike push-up',stat:'FOR',pts:4,xp:22,art:'pike',t:L(6,1,40),u:'rip.',
+ info:'1) Posizione a V rovesciata: mani a terra, fianchi in alto, gambe quasi tese. 2) Piega i gomiti e porta la testa verso il pavimento. 3) Spingi e torna su. Allena le spalle senza pesi.'},
+// ── GAMBE (FOR) ──
+squat:{name:'Squat a corpo libero',stat:'FOR',pts:3,xp:20,art:'squat',t:L(15,3,120),u:'rip.',
+ info:'1) Piedi larghezza spalle, punte leggermente in fuori. 2) Scendi come per sederti finché le cosce sono parallele al suolo, schiena dritta, talloni a terra. 3) Spingi sui talloni per risalire.'},
+sumo:{name:'Squat sumo',stat:'FOR',pts:3,xp:20,art:'squat',t:L(12,3,110),u:'rip.',
+ info:'1) Piedi molto larghi, punte a 45° in fuori. 2) Scendi tenendo le ginocchia in linea con le punte. 3) Risali stringendo i glutei. Lavora interno coscia e glutei.'},
+lunge:{name:'Affondi alternati',stat:'FOR',pts:3,xp:20,art:'lunge',t:L(10,2,60),u:'rip. tot',
+ info:'1) Passo avanti ampio. 2) Scendi finché il ginocchio dietro quasi tocca terra, busto verticale. 3) Spingi col tallone davanti e torna in piedi. Alterna le gambe. Equilibrio precario? Mano al muro.'},
+bridge:{name:'Ponte glutei',stat:'FOR',pts:3,xp:18,art:'bridge',t:L(15,3,100),u:'rip.',
+ info:'1) Sdraiato a pancia in su, ginocchia piegate, piedi a terra vicini ai glutei. 2) Solleva il bacino stringendo i glutei fino a formare una linea spalle-ginocchia. 3) Tieni 1 sec in alto, scendi lento.'},
+// ── CORE (RES) ──
+plank:{name:'Plank',stat:'RES',pts:3,xp:15,art:'plank',t:L(20,5,240),u:'sec',
+ info:'1) Avambracci a terra, gomiti sotto le spalle. 2) Corpo in linea retta, glutei e addome contratti, non alzare il bacino. 3) Respira normalmente. Se cedi, dividi il tempo in 2-3 serie con 30 sec di pausa.'},
+sideplank:{name:'Plank laterale',stat:'RES',pts:3,xp:15,art:'sideplank',t:L(15,3,120),u:'sec/lato',
+ info:'1) Di fianco, avambraccio a terra sotto la spalla. 2) Solleva il bacino: corpo in linea dalla testa ai piedi. 3) Tieni, poi cambia lato. Lavora gli obliqui.'},
+crunch:{name:'Crunch',stat:'RES',pts:3,xp:15,art:'crunch',t:L(15,3,100),u:'rip.',
+ info:'1) Schiena a terra, ginocchia piegate, mani sfiorano le tempie (mai tirare il collo). 2) Solleva le spalle di pochi centimetri contraendo l\u2019addome. 3) Scendi lento. Movimento corto e controllato.'},
+legraise:{name:'Sollevamento gambe',stat:'RES',pts:3,xp:16,art:'legraise',t:L(10,2,60),u:'rip.',
+ info:'1) Sdraiato, mani sotto i glutei, gambe tese. 2) Sollevale a 90° senza slancio. 3) Scendile lente SENZA toccare terra e risali. Se la schiena si inarca, piega un po\u2019 le ginocchia.'},
+superman:{name:'Superman',stat:'RES',pts:3,xp:15,art:'superman',t:L(12,2,60),u:'rip.',
+ info:'1) A pancia in giù, braccia avanti. 2) Solleva insieme braccia, petto e gambe di qualche centimetro. 3) Tieni 2 sec, scendi. Rinforza la schiena: l\u2019antidoto alle ore da seduto.'},
+birddog:{name:'Bird dog',stat:'RES',pts:3,xp:15,art:'birddog',t:L(8,2,50),u:'rip./lato',
+ info:'1) A quattro zampe, schiena neutra. 2) Allunga insieme braccio destro e gamba sinistra fino alla linea del corpo. 3) Tieni 2 sec, torna e cambia lato. Lento: è equilibrio, non velocità.'},
+wallsit:{name:'Sedia al muro',stat:'RES',pts:3,xp:16,art:'wallsit',t:L(20,5,180),u:'sec',
+ info:'1) Schiena aderente al muro, scivola giù finché le cosce sono parallele al pavimento. 2) Ginocchia a 90°, sopra le caviglie. 3) Tieni la posizione respirando. Bruciano le gambe: è normale.'},
+// ── CARDIO (RES) ──
+run:{name:'Camminata veloce / corsa',stat:'RES',pts:4,xp:25,art:'run',t:L(15,1,60),u:'min',
+ info:'1) Ritmo che ti fa respirare più forte ma ti permette ancora di parlare. 2) Dal Lv.5 alterna 1 min di corsa e 2 di camminata. 3) Niente scuse meteo: su e giù per le scale di casa vale.'},
+burpee:{name:'Burpee',stat:'RES',pts:4,xp:22,art:'burpee',t:L(5,1,30),u:'rip.',
+ info:'1) Accovacciati e appoggia le mani a terra. 2) (Facile: fai un passo indietro per gamba / Duro: aggiungi una flessione). 3) Torna coi piedi alle mani e salta in alto con le braccia tese. Ritmo tuo, forma perfetta.'},
+highknees:{name:'Corsa ginocchia alte',stat:'RES',pts:3,xp:18,art:'highknees',t:L(30,5,150),u:'sec',
+ info:'1) Corri sul posto portando le ginocchia all\u2019altezza dei fianchi. 2) Braccia che pompano coordinandosi. 3) Atterra sull\u2019avampiede, morbido. Fiato corto? Rallenta ma non fermarti.'},
+mclimber:{name:'Mountain climber',stat:'RES',pts:3,xp:18,art:'mclimber',t:L(20,4,100),u:'rip.',
+ info:'1) Posizione di flessione, braccia tese. 2) Porta un ginocchio al petto e alternale con ritmo costante. 3) Bacino basso, spalle sopra le mani.'},
+// ── AGILITÀ ──
+jjack:{name:'Jumping jack',stat:'AGI',pts:3,xp:15,art:'jjack',t:L(20,5,150),u:'rip.',
+ info:'1) In piedi, salta aprendo gambe e braccia contemporaneamente. 2) Richiudi con un secondo saltello. 3) Atterra morbido sulle punte. Ottimo riscaldamento prima del resto.'},
+skater:{name:'Skater jump',stat:'AGI',pts:3,xp:17,art:'skater',t:L(16,4,80),u:'rip.',
+ info:'1) Salta lateralmente atterrando su un piede solo, l\u2019altra gamba dietro in equilibrio. 2) Spingi e salta dall\u2019altro lato. 3) Atterraggi morbidi, ginocchio in linea col piede. Come un pattinatore.'},
+squatjump:{name:'Squat jump',stat:'AGI',pts:4,xp:18,art:'squatjump',t:L(8,2,40),u:'rip.',
+ info:'1) Scendi in squat. 2) Esplodi verso l\u2019alto saltando. 3) Atterra morbido ripiegando subito le ginocchia e riparti. Se le ginocchia protestano, fai squat normali veloci.'},
+sidestretch:{name:'Mobilità dinamica',stat:'AGI',pts:2,xp:12,art:'sidestretch',t:L(8,1,20),u:'rip./lato',
+ info:'1) In piedi, braccia sopra la testa. 2) Inclina il busto di lato allungandoti, torna al centro, vai dall\u2019altro lato. 3) Aggiungi cerchi con le braccia e rotazioni del busto. Movimenti ampi e fluidi.'},
+stretch:{name:'Stretching completo',stat:'AGI',pts:2,xp:10,art:'stretch',t:L(5,.5,20),u:'min',
+ info:'1) Allunga gambe, schiena, spalle e collo. 2) Ogni posizione 30 sec, senza molleggiare, respirando lentamente. 3) Mai dolore acuto, solo tensione che si scioglie.'},
+// ── VITALITÀ ──
+water:{name:'Bevi acqua',stat:'VIT',pts:2,xp:10,art:'water',t:()=>8,u:'bicchieri',
+ info:'Circa 2 litri distribuiti nella giornata. Trucco: un bicchiere appena sveglio e uno prima di ogni pasto. Idratazione = recupero muscolare e concentrazione.'},
+sleep:{name:'Dormi almeno 7 ore',stat:'VIT',pts:2,xp:10,art:'sleep',t:()=>'',u:'la notte scorsa',
+ info:'Il sonno è dove il corpo si potenzia davvero: senza recupero non c\u2019è level up. Spuntala se stanotte hai dormito 7+ ore. Aiuto concreto: niente schermi 30 min prima di dormire.'},
+walk:{name:'Camminata leggera',stat:'VIT',pts:3,xp:15,art:'walk',t:L(20,1,45),u:'min',
+ info:'Passo tranquillo, meglio all\u2019aperto e con la luce del giorno. Il recupero attivo mantiene i punti senza stressare i muscoli.'},
+// ── INTELLIGENZA ──
+read:{name:'Lettura',stat:'INT',pts:3,xp:15,art:'read',t:L(15,.5,45),u:'min',
+ info:'Libro, saggio o articolo di qualità (non scroll sui social). La lettura profonda allena memoria e concentrazione come lo squat allena le gambe.'},
+meditate:{name:'Meditazione / respirazione',stat:'INT',pts:2,xp:12,art:'meditate',t:L(5,.34,15),u:'min',
+ info:'1) Seduto comodo, occhi chiusi. 2) Attenzione sul respiro: 4 sec inspiro, 6 sec espiro. 3) Quando la mente vaga, riportala al respiro senza giudicarti: è la ripetizione dell\u2019esercizio.'},
+study:{name:'Impara qualcosa di nuovo',stat:'INT',pts:3,xp:15,art:'study',t:L(15,.5,40),u:'min',
+ info:'Lingua, corso, tutorial, strumento musicale: qualunque cosa richieda apprendimento attivo. La costanza batte l\u2019intensità.'},
+journal:{name:'Scrittura / diario',stat:'INT',pts:2,xp:12,art:'journal',t:L(10,.34,20),u:'min',
+ info:'Scrivi a mano o al PC: cosa hai fatto oggi, cosa hai imparato, 3 cose per cui sei grato. Mette ordine nella mente e consolida i progressi.'}
+};
+
+// pool per categoria: ogni giorno il Sistema pesca 1 esercizio per pool
+const POOLS = {
+  push:['pushup','pushup_wide','pushup_diamond','pike'],
+  legs:['squat','sumo','lunge','bridge'],
+  core:['plank','sideplank','crunch','legraise','superman','birddog','wallsit'],
+  cardio:['run','burpee','highknees','mclimber'],
+  agi:['jjack','skater','squatjump','sidestretch','stretch'],
+  vit:['water','sleep','walk'],
+  int:['read','meditate','study','journal']
+};
+const RECOVERY = ['stretch','walk','meditate','water','sleep']; // domenica
+
+// ─────────────────────────────────────────
+// 3. SELEZIONE GIORNALIERA — RNG deterministico
+//    seed = data → stessa selezione tutto il giorno,
+//    diversa dagli altri giorni; mai la stessa scelta
+//    di ieri nello stesso pool.
+// ─────────────────────────────────────────
+function fnv(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+// ritorna {ids, picks} per la data; last = scelte del giorno prima per pool
+function questIdsFor(ds, last){
+  const d = new Date(ds+'T12:00:00');
+  if(d.getDay()===0) return { ids: RECOVERY.slice(), picks:{} };
+  const rng = mulberry32(fnv(ds));
+  const ids = [], picks = {};
+  for(const pool of ['push','legs','core','cardio','agi','vit','int']){
+    const arr = POOLS[pool];
+    let i = Math.floor(rng()*arr.length);
+    if(last && arr[i]===last[pool]) i = (i+1)%arr.length;  // mai come ieri
+    picks[pool] = arr[i];
+    ids.push(arr[i]);
+  }
+  return { ids, picks };
+}
+
+// ─────────────────────────────────────────
+// 4. STORAGE, PENALITÀ, CLASSI, ABILITÀ
+// ─────────────────────────────────────────
 const store = (() => {
   let mem = {};
   try {
@@ -293,308 +532,213 @@ const store = (() => {
     return { get: k => mem[k] ?? null, set: (k,v) => { mem[k]=v; } };
   }
 })();
-
-const KEY = 'sl_save_v2', KEY_V1 = 'sl_save_v1';
+const KEY='sl_save_v3', KEY_V2='sl_save_v2', KEY_V1='sl_save_v1';
 const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-const isSunday = () => new Date().getDay() === 0;
-const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+const isSunday = () => new Date().getDay()===0;
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 
-// ---------- catalogo esercizi (lato personal trainer) ----------
-// target = f(livello), progressione ~5-10% per livello con tetti di sicurezza.
-const EX = {
-  pushup:  { name:'Flessioni', stat:'FOR', pts:3, xp:20,
-    target:l=>Math.min(10+2*l, 80)+' rip.',
-    info:'Corpo in linea retta, core contratto, scendi col petto quasi a terra, gomiti a ~45°. Troppo difficile? Falle sulle ginocchia o contro un muro: contano uguale.' },
-  squat:   { name:'Squat a corpo libero', stat:'FOR', pts:3, xp:20,
-    target:l=>Math.min(15+3*l, 120)+' rip.',
-    info:'Piedi larghezza spalle, scendi come per sederti finché le cosce sono parallele al suolo, schiena dritta, talloni a terra. Spingi sui talloni per risalire.' },
-  lunge:   { name:'Affondi alternati', stat:'FOR', pts:3, xp:20,
-    target:l=>Math.min(10+2*l, 60)+' rip. tot',
-    info:'Passo avanti ampio, ginocchio posteriore verso il suolo, busto verticale. Alterna le gambe. Se perdi equilibrio, appoggia una mano al muro.' },
-  plank:   { name:'Plank', stat:'RES', pts:3, xp:15,
-    target:l=>Math.min(20+5*l, 240)+' sec',
-    info:'Avambracci a terra, corpo in linea, glutei e addome contratti, non alzare il bacino. Se cedi, dividi il tempo in 2-3 serie con 30 sec di pausa.' },
-  cardio:  { name:'Camminata veloce / corsa', stat:'RES', pts:4, xp:25,
-    target:l=>Math.min(15+l, 60)+' min',
-    info:'Ritmo che ti fa respirare più forte ma ti permette ancora di parlare. Dal Lv.5 puoi alternare 1 min di corsa e 2 di camminata.' },
-  mclimber:{ name:'Mountain climber', stat:'RES', pts:3, xp:15,
-    target:l=>Math.min(20+4*l, 100)+' rip.',
-    info:'Posizione di flessione, porta le ginocchia al petto alternandole, ritmo costante, bacino basso.' },
-  jjack:   { name:'Jumping jack', stat:'AGI', pts:3, xp:15,
-    target:l=>Math.min(20+5*l, 150)+' rip.',
-    info:'Salta aprendo gambe e braccia contemporaneamente, atterra morbido sulle punte. Ottimo come riscaldamento prima degli altri esercizi.' },
-  stretch: { name:'Stretching completo', stat:'AGI', pts:2, xp:10,
-    target:l=>Math.min(5+Math.floor(l/2), 20)+' min',
-    info:'Allunga gambe, schiena, spalle e collo. Ogni posizione 30 sec, senza molleggiare, respirando lentamente. Mai dolore acuto, solo tensione.' },
-  water:   { name:'Bevi acqua', stat:'VIT', pts:2, xp:10,
-    target:()=>'8 bicchieri',
-    info:'Circa 2 litri distribuiti nella giornata. Idratazione = recupero muscolare e concentrazione.' },
-  sleep:   { name:'Dormi almeno 7 ore', stat:'VIT', pts:2, xp:10,
-    target:()=>'la notte scorsa',
-    info:'Il sonno è dove il corpo si potenzia davvero: senza recupero non c\u2019è level up. Spuntala se stanotte hai dormito 7+ ore.' },
-  walkez:  { name:'Camminata leggera', stat:'VIT', pts:3, xp:15,
-    target:l=>Math.min(20+l, 45)+' min',
-    info:'Passo tranquillo, meglio all\u2019aperto. Il recupero attivo mantiene i punti senza stressare i muscoli.' },
-  // ── missioni Intelligenza ──
-  lettura: { name:'Lettura', stat:'INT', pts:3, xp:15,
-    target:l=>Math.min(15+Math.floor(l/2), 45)+' min',
-    info:'Libro, saggio o articolo di qualità (non scroll sui social). La lettura profonda allena memoria e concentrazione come lo squat allena le gambe.' },
-  medita:  { name:'Meditazione / respirazione', stat:'INT', pts:2, xp:12,
-    target:l=>Math.min(5+Math.floor(l/3), 15)+' min',
-    info:'Seduto comodo, occhi chiusi, attenzione sul respiro: 4 sec inspiro, 6 sec espiro. Quando la mente vaga, riportala al respiro senza giudicarti: è la ripetizione dell\u2019esercizio.' },
-  studio:  { name:'Impara qualcosa di nuovo', stat:'INT', pts:3, xp:15,
-    target:l=>Math.min(15+Math.floor(l/2), 40)+' min',
-    info:'Lingua, corso, tutorial, strumento musicale: qualunque cosa che richieda apprendimento attivo. La costanza batte l\u2019intensità.' }
-};
-
-// Rotazione: 4 fisiche core + 1 INT + 1 extra a rotazione. Domenica = recupero.
-function questIdsForToday(){
-  if (isSunday()) return ['stretch','walkez','medita','water','sleep'];
-  const day = new Date().getDay(); // 1..6
-  const intRot   = ['lettura','medita','studio'][day % 3];
-  const extraRot = ['jjack','water','sleep','mclimber','lunge','stretch'][(day-1) % 6];
-  return ['pushup','squat','plank','cardio', intRot, extraRot];
-}
-
-// ---------- penalità (lato personal trainer: dura ma sicura) ----------
 function buildPenaltyMission(level){
   const sq = Math.min(20+3*level, 80);
   const mn = Math.min(15+level, 40);
   return {
-    id:'penalty', penalty:true, name:'QUEST PENALITÀ', stat:'PEN', pts:0, xp:15,
+    id:'penalty', penalty:true, name:'QUEST PENALITÀ', stat:'PEN', pts:0, xp:15, art:'squat',
     target:`${sq} squat + ${mn} min camminata`,
     info:'Hai fallito la quest di ieri. Il Sistema non concede il bonus giornaliero finché la penalità non è saldata. Nessun punto statistica: solo disciplina. Esegui gli squat in serie da 15-20 con pause brevi.',
     done:false
   };
 }
 
-// ---------- classi (sblocco Lv.30, in base alla statistica dominante) ----------
 const CLASSES = {
-  FOR:{ name:'BERSERKER', icon:'⚔', color:'var(--str)',
-        desc:'La tua forza domina. Missioni di Forza: punti +50%. Completamento giornaliero: +2 FOR extra.' },
-  RES:{ name:'GUARDIANO', icon:'🛡', color:'var(--end)',
-        desc:'Nessuno ti spezza. Missioni di Resistenza: punti +50%. Completamento giornaliero: +2 RES extra.' },
-  AGI:{ name:'ASSASSINO', icon:'🗡', color:'var(--agi)',
-        desc:'Veloce e letale. XP +25% su tutte le missioni. Completamento giornaliero: +2 AGI extra.' },
-  VIT:{ name:'MONACO', icon:'☯', color:'var(--vit)',
-        desc:'Il corpo è il tempio. Penalità XP dimezzate. Completamento giornaliero: +2 VIT extra.' },
-  INT:{ name:'ARCIMAGO', icon:'✦', color:'var(--int)',
-        desc:'La mente è l\u2019arma suprema. Bonus di completamento giornaliero RADDOPPIATO. +2 INT extra al giorno completato.' }
+  FOR:{ name:'BERSERKER', icon:'⚔', desc:'La tua forza domina. Missioni di Forza: punti +50%. Completamento giornaliero: +2 FOR extra.' },
+  RES:{ name:'GUARDIANO', icon:'🛡', desc:'Nessuno ti spezza. Missioni di Resistenza: punti +50%. Completamento giornaliero: +2 RES extra.' },
+  AGI:{ name:'ASSASSINO', icon:'🗡', desc:'Veloce e letale. XP +25% su tutte le missioni. Completamento giornaliero: +2 AGI extra.' },
+  VIT:{ name:'MONACO', icon:'☯', desc:'Il corpo è il tempio. Penalità XP dimezzate. Completamento giornaliero: +2 VIT extra.' },
+  INT:{ name:'ARCIMAGO', icon:'✦', desc:'La mente è l\u2019arma suprema. Bonus di completamento giornaliero RADDOPPIATO. +2 INT extra al giorno completato.' }
 };
 function pickClass(stats){
   let best='FOR';
-  for(const k of ['FOR','RES','AGI','VIT','INT'])
-    if(stats[k] > stats[best]) best = k;
+  for(const k of ['FOR','RES','AGI','VIT','INT']) if(stats[k]>stats[best]) best=k;
   return best;
 }
 
-// ---------- abilità passive (effetti reali nel codice) ----------
 const ABILITIES = [
-  { id:'persistenza', lvl:5,  icon:'⟳', name:'Persistenza',
-    desc:'+10% XP da tutte le missioni.' },
-  { id:'doppio',      lvl:10, icon:'✧', name:'Doppio Colpo',
-    desc:'La prima missione completata di ogni giorno assegna punti statistica DOPPI.' },
-  { id:'recupero',    lvl:15, icon:'♻', name:'Recupero Rapido',
-    desc:'Le penalità XP per quest fallite sono dimezzate.' },
-  { id:'mente',       lvl:20, icon:'◈', name:'Mente Lucida',
-    desc:'Le missioni di Intelligenza assegnano punti +50%.' },
-  { id:'sovrano',     lvl:25, icon:'♛', name:'Volontà del Sovrano',
-    desc:'Bonus di completamento giornaliero +50%.' },
-  { id:'fiamma',      lvl:null, req:'Streak ≥ 7 giorni', icon:'🔥', name:'Fiamma Costante',
-    desc:'Finché la streak è di almeno 7 giorni, ricevi +1 VIT automatico ogni mattina.' },
-  { id:'risveglio',   lvl:30, icon:'☄', name:'Risveglio',
-    desc:'Cambio classe: il Sistema ti assegna una classe in base alla tua statistica dominante, con ricompense permanenti.' },
+  { id:'persistenza', lvl:5,  icon:'⟳', name:'Persistenza', desc:'+10% XP da tutte le missioni.' },
+  { id:'doppio',      lvl:10, icon:'✧', name:'Doppio Colpo', desc:'La prima missione completata di ogni giorno assegna punti statistica DOPPI.' },
+  { id:'recupero',    lvl:15, icon:'♻', name:'Recupero Rapido', desc:'Le penalità XP per quest fallite sono dimezzate.' },
+  { id:'mente',       lvl:20, icon:'◈', name:'Mente Lucida', desc:'Le missioni di Intelligenza assegnano punti +50%.' },
+  { id:'sovrano',     lvl:25, icon:'♛', name:'Volontà del Sovrano', desc:'Bonus di completamento giornaliero +50%.' },
+  { id:'fiamma',      lvl:null, req:'Streak ≥ 7 giorni', icon:'🔥', name:'Fiamma Costante', desc:'Finché la streak è di almeno 7 giorni, ricevi +1 VIT automatico ogni mattina.' },
+  { id:'risveglio',   lvl:30, icon:'☄', name:'Risveglio', desc:'Cambio classe: il Sistema ti assegna una classe in base alla tua statistica dominante, con ricompense permanenti.' }
 ];
 function hasAbility(id){
   if(!S) return false;
-  if(id==='fiamma') return S.streak >= 7;
+  if(id==='fiamma') return S.streak>=7;
   const a = ABILITIES.find(x=>x.id===id);
-  return a && a.lvl !== null && S.level >= a.lvl;
+  return a && a.lvl!==null && S.level>=a.lvl;
 }
 
-// ---------- motore ricompense (il Sistema calcola tutto) ----------
-// Ritorna {pts, xp} finali per una missione, applicando abilità e classe.
+// ─── motore ricompense ───
 function computeReward(m){
   if(m.penalty) return { pts:0, xp:m.xp };
-  let pts = m.pts, xp = m.xp;
-
-  // Doppio Colpo: prima missione del giorno → punti x2
-  if(hasAbility('doppio') && !S.firstStrikeUsed) pts *= 2;
-
-  // Mente Lucida: missioni INT +50% punti
-  if(hasAbility('mente') && m.stat==='INT') pts = Math.round(pts*1.5);
-
-  // Classe: +50% punti sulle missioni della statistica di classe (Berserker/Guardiano)
-  if(S.class && (S.class==='FOR'||S.class==='RES') && m.stat===S.class) pts = Math.round(pts*1.5);
-
-  // XP: Persistenza +10%, Assassino +25%
-  let mult = 1;
-  if(hasAbility('persistenza')) mult += 0.10;
-  if(S.class==='AGI') mult += 0.25;
-  xp = Math.round(xp*mult);
-
+  let pts=m.pts, xp=m.xp;
+  if(hasAbility('doppio') && !S.firstStrikeUsed) pts*=2;
+  if(hasAbility('mente') && m.stat==='INT') pts=Math.round(pts*1.5);
+  if(S.class && (S.class==='FOR'||S.class==='RES') && m.stat===S.class) pts=Math.round(pts*1.5);
+  let mult=1;
+  if(hasAbility('persistenza')) mult+=0.10;
+  if(S.class==='AGI') mult+=0.25;
+  xp=Math.round(xp*mult);
   return { pts, xp };
 }
 function completionBonus(){
   let b = 30 + S.level*5;
-  if(hasAbility('sovrano')) b = Math.round(b*1.5);
-  if(S.class==='INT') b *= 2;                       // Arcimago
+  if(hasAbility('sovrano')) b=Math.round(b*1.5);
+  if(S.class==='INT') b*=2;
   return b;
 }
 function penaltyXpLoss(){
   let loss = 10 + 2*S.level;
-  if(hasAbility('recupero') || S.class==='VIT') loss = Math.round(loss/2);
+  if(hasAbility('recupero') || S.class==='VIT') loss=Math.round(loss/2);
   return loss;
 }
 
-// ---------- stato & salvataggio ----------
-let S = null;
+// ─────────────────────────────────────────
+// 5. STATO & CICLO GIORNALIERO
+// ─────────────────────────────────────────
+let S=null;
 
-function defaultSave(name){
-  return {
-    v:2, name, level:1, xp:0, totalDone:0, streak:0,
-    stats:{FOR:10,RES:10,AGI:10,VIT:10,INT:10},
-    class:null,                    // 'FOR'|'RES'|'AGI'|'VIT'|'INT' dal Lv.30
-    day:todayStr(),
-    missions:buildMissions(1),
-    bonusClaimed:false,
-    firstStrikeUsed:false,         // per Doppio Colpo
-    penaltyNotice:null             // messaggio penalità del giorno
-  };
-}
-function buildMissions(level){
-  return questIdsForToday().map(id=>{
+function buildMissions(level, ds, last){
+  const q = questIdsFor(ds, last);
+  const missions = q.ids.map(id=>{
     const e=EX[id];
-    return { id, name:e.name, stat:e.stat, pts:e.pts, xp:e.xp,
-             target:e.target(level), info:e.info, done:false };
+    const tv = e.t(level);
+    return { id, name:e.name, stat:e.stat, pts:e.pts, xp:e.xp, art:e.art,
+             target:(tv!==''? tv+' ':'')+e.u, info:e.info, done:false };
   });
+  return { missions, picks:q.picks };
+}
+function defaultSave(name){
+  const b = buildMissions(1, todayStr(), null);
+  return {
+    v:3, name, level:1, xp:0, totalDone:0, streak:0,
+    stats:{FOR:10,RES:10,AGI:10,VIT:10,INT:10},
+    class:null, day:todayStr(),
+    missions:b.missions, lastPicks:b.picks,
+    bonusClaimed:false, firstStrikeUsed:false, penaltyNotice:null
+  };
 }
 const xpNeeded = lvl => 100 + (lvl-1)*25;
 const rankTitle = lvl => lvl>=40?'Monarca':lvl>=30?'Rango S':lvl>=20?'Rango A':lvl>=15?'Rango B':lvl>=10?'Rango C':lvl>=5?'Rango D':'Rango E';
 
-function migrateV1(old){
+function migrateOld(old){
   const s = defaultSave(old.name);
   s.level=old.level; s.xp=old.xp; s.totalDone=old.totalDone; s.streak=old.streak;
-  Object.assign(s.stats, old.stats);      // INT resta 10
-  s.day=''; // forza rigenerazione missioni al boot (nuovo formato con INT)
+  Object.assign(s.stats, old.stats);
+  if(old.class) s.class=old.class;
+  s.day='';                              // forza rigenerazione al boot
   return s;
 }
 function load(){
   let raw = store.get(KEY);
   if(raw){ try { return JSON.parse(raw); } catch(e){} }
-  raw = store.get(KEY_V1);
-  if(raw){ try { return migrateV1(JSON.parse(raw)); } catch(e){} }
+  for(const k of [KEY_V2, KEY_V1]){
+    raw = store.get(k);
+    if(raw){ try { return migrateOld(JSON.parse(raw)); } catch(e){} }
+  }
   return null;
 }
 function save(){ store.set(KEY, JSON.stringify(S)); }
 
-// ---------- reset di mezzanotte + penalità ----------
 function checkNewDay(){
   if(!S) return;
   const t = todayStr();
-  if(S.day === t) return;
+  if(S.day===t) return;
 
-  const hadMissions = S.missions && S.missions.length > 0;
+  const hadMissions = S.missions && S.missions.length>0;
   const allDone = hadMissions && S.missions.every(m=>m.done);
-  let pendingPenalty = false;
+  let pendingPenalty=false;
 
-  if(hadMissions && !allDone && S.day !== ''){       // giorno fallito
-    S.streak = 0;
-    const loss = Math.min(S.xp, penaltyXpLoss());
-    S.xp -= loss;
-    pendingPenalty = true;
-    S.penaltyNotice = `⚠ Quest di ieri fallita: −${loss} XP · streak azzerata · Quest Penalità assegnata.`;
+  if(hadMissions && !allDone && S.day!==''){
+    S.streak=0;
+    const loss=Math.min(S.xp, penaltyXpLoss());
+    S.xp-=loss;
+    pendingPenalty=true;
+    S.penaltyNotice=`⚠ Quest di ieri fallita: −${loss} XP · streak azzerata · Quest Penalità assegnata.`;
   } else {
     if(allDone) S.streak++;
-    S.penaltyNotice = null;
+    S.penaltyNotice=null;
   }
 
-  // Fiamma Costante: +1 VIT al giorno con streak ≥ 7
-  if(S.streak >= 7) S.stats.VIT++;
+  if(S.streak>=7) S.stats.VIT++;         // Fiamma Costante
 
-  S.day = t;
-  S.missions = buildMissions(S.level);
+  S.day=t;
+  const b = buildMissions(S.level, t, S.lastPicks);
+  S.missions=b.missions; S.lastPicks=b.picks;
   if(pendingPenalty) S.missions.unshift(buildPenaltyMission(S.level));
-  S.bonusClaimed = false;
-  S.firstStrikeUsed = false;
+  S.bonusClaimed=false; S.firstStrikeUsed=false;
   save(); render();
 }
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewDay(); });
 setInterval(checkNewDay, 60000);
 
-// ---------- azioni ----------
+// ─────────────────────────────────────────
+// 6. AZIONI
+// ─────────────────────────────────────────
 function createPlayer(){
-  const name = document.getElementById('inp-name').value.trim();
+  const name=document.getElementById('inp-name').value.trim();
   if(!name){ document.getElementById('inp-name').focus(); return; }
-  S = defaultSave(name);
+  S=defaultSave(name);
   save(); boot();
 }
 
 function toggleMission(i, ev){
-  const m = S.missions[i];
-
+  const m=S.missions[i];
   if(!m.done){
-    // ── completamento: il Sistema calcola e assegna ──
-    const r = computeReward(m);
-    m.done = true;
-    m.gainPts = r.pts; m.gainXp = r.xp;              // memorizza per revert esatto
+    const r=computeReward(m);
+    m.done=true;
+    m.gainPts=r.pts; m.gainXp=r.xp;
     m.usedFirstStrike = hasAbility('doppio') && !S.firstStrikeUsed && !m.penalty;
-    if(m.usedFirstStrike) S.firstStrikeUsed = true;
+    if(m.usedFirstStrike) S.firstStrikeUsed=true;
 
-    if(!m.penalty) S.stats[m.stat] += r.pts;
-    S.xp += r.xp;
-    S.totalDone++;
+    if(!m.penalty) S.stats[m.stat]+=r.pts;
+    S.xp+=r.xp; S.totalDone++;
 
     if(ev){
       const colors={FOR:'var(--str)',RES:'var(--end)',AGI:'var(--agi)',VIT:'var(--vit)',INT:'var(--int)',PEN:'var(--danger)'};
-      const txt = m.penalty ? `PENALITÀ SALDATA +${r.xp} XP`
-                            : `+${r.pts} ${m.stat}  +${r.xp} XP`;
+      const txt=m.penalty?`PENALITÀ SALDATA +${r.xp} XP`:`+${r.pts} ${m.stat}  +${r.xp} XP`;
       floatText(txt, colors[m.stat], ev.clientX, ev.clientY);
     }
-
-    // ── bonus completamento totale + ricompensa di classe ──
     if(S.missions.every(x=>x.done) && !S.bonusClaimed){
-      S.bonusClaimed = true;
-      const bonus = completionBonus();
-      S.xp += bonus;
-      let msg = `QUEST COMPLETATA  +${bonus} XP`;
-      if(S.class){
-        S.stats[S.class] += 2;                       // ricompensa di classe
-        msg += `  +2 ${S.class}`;
-      }
-      setTimeout(()=>floatText(msg, 'var(--gold)',
-        window.innerWidth/2-90, window.innerHeight/2), 350);
+      S.bonusClaimed=true;
+      const bonus=completionBonus();
+      S.xp+=bonus;
+      let msg=`QUEST COMPLETATA  +${bonus} XP`;
+      if(S.class){ S.stats[S.class]+=2; msg+=`  +2 ${S.class}`; }
+      setTimeout(()=>floatText(msg,'var(--gold)',window.innerWidth/2-90,window.innerHeight/2),350);
     }
   } else {
-    // ── revert esatto (solo stesso giorno) ──
-    m.done = false;
-    if(!m.penalty) S.stats[m.stat] = Math.max(1, S.stats[m.stat] - (m.gainPts||m.pts));
-    S.xp = Math.max(0, S.xp - (m.gainXp||m.xp));
-    S.totalDone = Math.max(0, S.totalDone - 1);
-    if(m.usedFirstStrike){ S.firstStrikeUsed = false; m.usedFirstStrike = false; }
-    // nota: il bonus giornaliero già riscosso non viene revocato (scelta di design clemente)
+    m.done=false;
+    if(!m.penalty) S.stats[m.stat]=Math.max(1,S.stats[m.stat]-(m.gainPts||m.pts));
+    S.xp=Math.max(0,S.xp-(m.gainXp||m.xp));
+    S.totalDone=Math.max(0,S.totalDone-1);
+    if(m.usedFirstStrike){ S.firstStrikeUsed=false; m.usedFirstStrike=false; }
   }
-
   checkLevelUp();
   save(); render();
 }
 
 function checkLevelUp(){
-  let leveled = false;
-  while(S.xp >= xpNeeded(S.level)){
-    S.xp -= xpNeeded(S.level);
+  let leveled=false;
+  while(S.xp>=xpNeeded(S.level)){
+    S.xp-=xpNeeded(S.level);
     S.level++;
-    for(const k in S.stats) S.stats[k]++;            // +1 a tutte le statistiche
-    leveled = true;
-
-    // nuove abilità sbloccate a questo livello?
-    const newAb = ABILITIES.find(a=>a.lvl===S.level && a.id!=='risveglio');
+    for(const k in S.stats) S.stats[k]++;
+    leveled=true;
+    const newAb=ABILITIES.find(a=>a.lvl===S.level && a.id!=='risveglio');
     if(newAb) queueOverlay('ABILITÀ SBLOCCATA', `${newAb.icon} ${newAb.name} — ${newAb.desc}`);
-
-    // ── RISVEGLIO: cambio classe al Lv.30 ──
     if(S.level===30 && !S.class){
-      S.class = pickClass(S.stats);
-      const c = CLASSES[S.class];
+      S.class=pickClass(S.stats);
+      const c=CLASSES[S.class];
       queueOverlay('RISVEGLIO', `Il Sistema ha analizzato le tue statistiche.\nClasse assegnata: ${c.icon} ${c.name}\n${c.desc}`);
     }
   }
@@ -604,35 +748,30 @@ function checkLevelUp(){
   flushOverlays();
 }
 
-// ---------- overlay a coda (level up / abilità / risveglio) ----------
-let overlayQueue = [];
-function queueOverlay(title, sub){ overlayQueue.push({title, sub}); }
+let overlayQueue=[];
+function queueOverlay(title,sub){ overlayQueue.push({title,sub}); }
 function flushOverlays(){
   if(!overlayQueue.length) return;
-  const o = overlayQueue.shift();
-  document.getElementById('ui-ov-title').textContent = o.title;
-  document.getElementById('ui-ov-sub').textContent = o.sub;
-  const el = document.getElementById('ui-overlay');
+  const o=overlayQueue.shift();
+  document.getElementById('ui-ov-title').textContent=o.title;
+  document.getElementById('ui-ov-sub').textContent=o.sub;
+  const el=document.getElementById('ui-overlay');
   el.classList.remove('hidden');
-  el.onclick = () => { el.classList.add('hidden'); setTimeout(flushOverlays, 200); };
+  el.onclick=()=>{ el.classList.add('hidden'); setTimeout(flushOverlays,200); };
   if(navigator.vibrate) navigator.vibrate([80,40,120]);
 }
 
 function floatText(txt,color,x,y){
   const el=document.createElement('div');
   el.className='float-pt'; el.textContent=txt;
-  el.style.color=color; el.style.left=clamp(x, 8, window.innerWidth-190)+'px'; el.style.top=(y-20)+'px';
+  el.style.color=color; el.style.left=clamp(x,8,window.innerWidth-190)+'px'; el.style.top=(y-20)+'px';
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),1300);
 }
+function toggleInfo(i){ document.querySelectorAll('.mission')[i].classList.toggle('open'); }
 
-function toggleInfo(i){
-  document.querySelectorAll('.mission')[i].classList.toggle('open');
-}
-
-// ---------- export / import ----------
 function exportSave(){
-  const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='sistema_save_'+todayStr()+'.json';
@@ -644,8 +783,8 @@ function importSave(){
     const f=e.target.files[0]; if(!f) return;
     const r=new FileReader();
     r.onload=()=>{ try{
-        const data = JSON.parse(r.result);
-        S = data.v===2 ? data : migrateV1(data);
+        const data=JSON.parse(r.result);
+        S = data.v===3 ? data : migrateOld(data);
         save(); checkNewDay(); render();
       } catch(err){ alert('File non valido.'); } };
     r.readAsText(f);
@@ -653,26 +792,27 @@ function importSave(){
   inp.click();
 }
 
-// ---------- render ----------
+// ─────────────────────────────────────────
+// 7. RENDER
+// ─────────────────────────────────────────
 function render(){
-  document.getElementById('ui-name').textContent = S.name.toUpperCase();
-  document.getElementById('ui-title').textContent = 'Cacciatore · '+rankTitle(S.level);
-  document.getElementById('ui-lvl').textContent = S.level;
-  const need = xpNeeded(S.level);
-  document.getElementById('ui-xpbar').style.width = Math.min(100, S.xp/need*100)+'%';
-  document.getElementById('ui-xptxt').textContent = S.xp+' / '+need;
-  document.getElementById('ui-streak').textContent = S.streak+(S.streak===1?' giorno':' giorni');
-  document.getElementById('ui-total').textContent = S.totalDone;
+  document.getElementById('ui-name').textContent=S.name.toUpperCase();
+  document.getElementById('ui-title').textContent='Cacciatore · '+rankTitle(S.level);
+  document.getElementById('ui-lvl').textContent=S.level;
+  const need=xpNeeded(S.level);
+  document.getElementById('ui-xpbar').style.width=Math.min(100,S.xp/need*100)+'%';
+  document.getElementById('ui-xptxt').textContent=S.xp+' / '+need;
+  document.getElementById('ui-streak').textContent=S.streak+(S.streak===1?' giorno':' giorni');
+  document.getElementById('ui-total').textContent=S.totalDone;
 
-  // classe
-  const cbox = document.getElementById('ui-class');
+  const cbox=document.getElementById('ui-class');
   if(S.class){
-    const c = CLASSES[S.class];
+    const c=CLASSES[S.class];
     cbox.className='class-box';
-    cbox.innerHTML = `<div class="cname">${c.icon} ${c.name}</div><div style="color:var(--muted);margin-top:3px">${c.desc}</div>`;
+    cbox.innerHTML=`<div class="cname">${c.icon} ${c.name}</div><div style="color:var(--muted);margin-top:3px">${c.desc}</div>`;
   } else {
     cbox.className='class-box locked';
-    cbox.innerHTML = `<div class="cname">CLASSE: NON RISVEGLIATA</div>
+    cbox.innerHTML=`<div class="cname">CLASSE: NON RISVEGLIATA</div>
       <div style="color:var(--muted);margin-top:3px">Al Lv.30 il Sistema ti assegnerà una classe in base alla tua statistica dominante. Allena ciò che vuoi diventare.</div>`;
   }
 
@@ -680,29 +820,27 @@ function render(){
     isSunday() ? '[ GIORNO DI RECUPERO — il corpo cresce quando riposa ]'
                : '[ PREPARATI A DIVENTARE PIÙ FORTE ]';
 
-  // avviso penalità
-  const pn = document.getElementById('ui-penalty-notice');
-  if(S.penaltyNotice){ pn.classList.remove('hidden'); pn.textContent = S.penaltyNotice; }
+  const pn=document.getElementById('ui-penalty-notice');
+  if(S.penaltyNotice){ pn.classList.remove('hidden'); pn.textContent=S.penaltyNotice; }
   else pn.classList.add('hidden');
 
-  // missioni
   const box=document.getElementById('ui-missions'); box.innerHTML='';
   S.missions.forEach((m,i)=>{
     const d=document.createElement('div');
     d.className='mission'+(m.done?' done':'')+(m.penalty?' penalty':'');
-    const preview = m.penalty ? {pts:0, xp:m.xp} : (m.done ? {pts:m.gainPts, xp:m.gainXp} : computeReward(m));
+    const preview = m.penalty ? {pts:0,xp:m.xp} : (m.done ? {pts:m.gainPts,xp:m.gainXp} : computeReward(m));
     d.innerHTML=`
       <div class="check" onclick="toggleMission(${i},event)">✓</div>
       <div class="m-body">
         <div class="m-name">${m.name}</div>
         <div class="m-target">${m.target}</div>
         <button class="info-btn" onclick="toggleInfo(${i})">esecuzione ▾</button>
-        <div class="m-info">${m.info}</div>
       </div>
       <div class="m-reward">
         <span class="tag ${m.stat}">${m.penalty?'PENALITÀ':'+'+preview.pts+' '+m.stat}</span>
         <span class="xp-tag">+${preview.xp} XP</span>
-      </div>`;
+      </div>
+      <div class="m-info">${exSvg(m.art)}${m.info}</div>`;
     box.appendChild(d);
   });
 
@@ -714,13 +852,12 @@ function render(){
   } else {
     b.className='bonus-line';
     b.textContent=`Completa tutto (${done}/${tot}) per il bonus: +${completionBonus()} XP`
-      + (S.class ? ` +2 ${S.class}` : '');
+      +(S.class?` +2 ${S.class}`:'');
   }
 
-  // stats
   const sbox=document.getElementById('ui-stats'); sbox.innerHTML='';
   const labels={FOR:'Forza',RES:'Resistenza',AGI:'Agilità',VIT:'Vitalità',INT:'Intelligenza'};
-  const maxRef=Math.max(60, ...Object.values(S.stats));
+  const maxRef=Math.max(60,...Object.values(S.stats));
   for(const k of ['FOR','RES','AGI','VIT','INT']){
     const row=document.createElement('div');
     row.className='stat s-'+k;
@@ -730,27 +867,28 @@ function render(){
     sbox.appendChild(row);
   }
 
-  // abilità
   const kbox=document.getElementById('ui-skills'); kbox.innerHTML='';
   ABILITIES.forEach(a=>{
     const unlocked = a.id==='fiamma' ? S.streak>=7
                    : a.id==='risveglio' ? S.level>=30
-                   : S.level >= a.lvl;
-    const req = a.req || ('Livello '+a.lvl);
+                   : S.level>=a.lvl;
+    const req=a.req||('Livello '+a.lvl);
     const d=document.createElement('div');
     d.className='skill'+(unlocked?'':' locked');
     d.innerHTML=`
-      <div class="s-icon">${unlocked ? a.icon : '🔒'}</div>
+      <div class="s-icon">${unlocked?a.icon:'🔒'}</div>
       <div>
         <div class="s-name">${a.name}</div>
         <div class="s-desc">${a.desc}</div>
-        <div class="s-req">${unlocked ? '● ATTIVA' : 'Richiede: '+req}</div>
+        <div class="s-req">${unlocked?'● ATTIVA':'Richiede: '+req}</div>
       </div>`;
     kbox.appendChild(d);
   });
 }
 
-// ---------- boot ----------
+// ─────────────────────────────────────────
+// 8. BOOT
+// ─────────────────────────────────────────
 function boot(){
   S = S || load();
   if(!S){
