@@ -166,6 +166,30 @@ body{
 .mission.open .m-info{display:block}
 .info-btn{background:none;border:1px solid var(--line);color:var(--muted);font-size:12px;
   padding:6px 12px;cursor:pointer;letter-spacing:1px;font-family:'Rajdhani';margin-top:5px}
+.start-btn{
+  background:linear-gradient(180deg,#0d2c4d,#0a1e38);border:1px solid var(--glow);color:var(--ice);
+  font-family:'Orbitron';font-size:11px;font-weight:700;letter-spacing:2px;
+  padding:7px 13px;cursor:pointer;margin-top:5px;box-shadow:0 0 10px rgba(0,140,255,.2);
+}
+.start-btn:active{transform:scale(.97)}
+
+/* ── player esercizio (timer / serie / riposo) ── */
+.player{
+  flex-basis:100%;margin-top:10px;padding:14px 10px;text-align:center;
+  border:1px dashed var(--line);background:rgba(3,10,22,.55);
+}
+.p-phase{font-family:'Orbitron';font-size:11px;letter-spacing:3px;color:var(--ice);margin-bottom:4px}
+.p-phase.rest{color:var(--gold)}
+.p-phase.count{animation:pulse 1s infinite}
+.p-main{
+  font-family:'Orbitron';font-weight:900;font-size:46px;line-height:1.1;color:#fff;
+  text-shadow:0 0 18px var(--glow-soft);
+}
+.p-main.rest{color:var(--gold);text-shadow:0 0 18px rgba(255,215,106,.4)}
+.p-main.small{font-size:28px}
+.p-round{font-size:13px;color:var(--muted);letter-spacing:1.5px;margin-top:3px}
+.p-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.btn.mini{width:auto;flex:0 0 auto;padding:10px 14px;font-size:11px;letter-spacing:1px}
 .bonus-line{
   text-align:center;font-size:13px;color:var(--muted);letter-spacing:1px;
   padding:8px;border:1px dashed var(--line);margin-top:6px;
@@ -622,31 +646,31 @@ highknees:{name:'Corsa ginocchia alte',stat:'RES',pts:3,xp:18,art:'highknees',t:
 mclimber:{name:'Mountain climber',stat:'RES',pts:3,xp:18,art:'mclimber',t:L(20,4,100),u:'rip.',spu:1.2,
  info:'1) Posizione di flessione, braccia tese. 2) Porta un ginocchio al petto e alternale con ritmo costante. 3) Bacino basso, spalle sopra le mani.'},
 // ── AGILITÀ ──
-jjack:{name:'Jumping jack',stat:'AGI',pts:3,xp:15,art:'jjack',t:L(20,5,150),u:'rip.',spu:1,
+jjack:{name:'Jumping jack',stat:'AGI',pts:5,xp:15,art:'jjack',t:L(20,5,150),u:'rip.',spu:1,
  info:'1) In piedi, salta aprendo gambe e braccia contemporaneamente. 2) Richiudi con un secondo saltello. 3) Atterra morbido sulle punte. Ottimo riscaldamento prima del resto.'},
-skater:{name:'Skater jump',stat:'AGI',pts:3,xp:17,art:'skater',t:L(16,4,80),u:'rip.',spu:1.5,
+skater:{name:'Skater jump',stat:'AGI',pts:5,xp:17,art:'skater',t:L(16,4,80),u:'rip.',spu:1.5,
  info:'1) Salta lateralmente atterrando su un piede solo, l\u2019altra gamba dietro in equilibrio. 2) Spingi e salta dall\u2019altro lato. 3) Atterraggi morbidi, ginocchio in linea col piede. Come un pattinatore.'},
-squatjump:{name:'Squat jump',stat:'AGI',pts:4,xp:18,art:'squatjump',t:L(8,2,40),u:'rip.',spu:2.5,
+squatjump:{name:'Squat jump',stat:'AGI',pts:6,xp:18,art:'squatjump',t:L(8,2,40),u:'rip.',spu:2.5,
  info:'1) Scendi in squat. 2) Esplodi verso l\u2019alto saltando. 3) Atterra morbido ripiegando subito le ginocchia e riparti. Se le ginocchia protestano, fai squat normali veloci.'},
-sidestretch:{name:'Mobilità dinamica',stat:'AGI',pts:2,xp:12,art:'sidestretch',t:L(8,1,20),u:'rip./lato',spu:2,
+sidestretch:{name:'Mobilità dinamica',stat:'AGI',pts:4,xp:12,art:'sidestretch',t:L(8,1,20),u:'rip./lato',spu:2,
  info:'1) In piedi, braccia sopra la testa. 2) Inclina il busto di lato allungandoti, torna al centro, vai dall\u2019altro lato. 3) Aggiungi cerchi con le braccia e rotazioni del busto. Movimenti ampi e fluidi.'},
-stretch:{name:'Stretching completo',stat:'AGI',pts:2,xp:10,art:'stretch',t:L(5,.5,20),u:'min',
+stretch:{name:'Stretching completo',stat:'AGI',pts:4,xp:10,art:'stretch',t:L(5,.5,20),u:'min',
  info:'1) Allunga gambe, schiena, spalle e collo. 2) Ogni posizione 30 sec, senza molleggiare, respirando lentamente. 3) Mai dolore acuto, solo tensione che si scioglie.'},
 // ── VITALITÀ ──
-water:{name:'Bevi acqua',stat:'VIT',pts:2,xp:10,art:'water',t:()=>8,u:'bicchieri',allday:true,
+water:{name:'Bevi acqua',stat:'VIT',pts:4,xp:10,art:'water',t:()=>8,u:'bicchieri',allday:true,
  info:'Circa 2 litri distribuiti nella giornata. Trucco: un bicchiere appena sveglio e uno prima di ogni pasto. Idratazione = recupero muscolare e concentrazione.'},
-sleep:{name:'Dormi almeno 7 ore',stat:'VIT',pts:2,xp:10,art:'sleep',t:()=>'',u:'la notte scorsa',allday:true,
+sleep:{name:'Dormi almeno 7 ore',stat:'VIT',pts:4,xp:10,art:'sleep',t:()=>'',u:'la notte scorsa',allday:true,
  info:'Il sonno è dove il corpo si potenzia davvero: senza recupero non c\u2019è level up. Spuntala se stanotte hai dormito 7+ ore. Aiuto concreto: niente schermi 30 min prima di dormire.'},
-walk:{name:'Camminata leggera',stat:'VIT',pts:3,xp:15,art:'walk',t:L(20,1,45),u:'min',
+walk:{name:'Camminata leggera',stat:'VIT',pts:5,xp:15,art:'walk',t:L(20,1,45),u:'min',
  info:'Passo tranquillo, meglio all\u2019aperto e con la luce del giorno. Il recupero attivo mantiene i punti senza stressare i muscoli.'},
 // ── INTELLIGENZA ──
-read:{name:'Lettura',stat:'INT',pts:3,xp:15,art:'read',t:L(15,.5,45),u:'min',
+read:{name:'Lettura',stat:'INT',pts:6,xp:15,art:'read',t:L(15,.5,45),u:'min',
  info:'Libro, saggio o articolo di qualità (non scroll sui social). La lettura profonda allena memoria e concentrazione come lo squat allena le gambe.'},
-meditate:{name:'Meditazione / respirazione',stat:'INT',pts:2,xp:12,art:'meditate',t:L(5,.34,15),u:'min',
+meditate:{name:'Meditazione / respirazione',stat:'INT',pts:5,xp:12,art:'meditate',t:L(5,.34,15),u:'min',
  info:'1) Seduto comodo, occhi chiusi. 2) Attenzione sul respiro: 4 sec inspiro, 6 sec espiro. 3) Quando la mente vaga, riportala al respiro senza giudicarti: è la ripetizione dell\u2019esercizio.'},
-study:{name:'Impara qualcosa di nuovo',stat:'INT',pts:3,xp:15,art:'study',t:L(15,.5,40),u:'min',
+study:{name:'Impara qualcosa di nuovo',stat:'INT',pts:6,xp:15,art:'study',t:L(15,.5,40),u:'min',
  info:'Lingua, corso, tutorial, strumento musicale: qualunque cosa richieda apprendimento attivo. La costanza batte l\u2019intensità.'},
-journal:{name:'Scrittura / diario',stat:'INT',pts:2,xp:12,art:'journal',t:L(10,.34,20),u:'min',
+journal:{name:'Scrittura / diario',stat:'INT',pts:5,xp:12,art:'journal',t:L(10,.34,20),u:'min',
  info:'Scrivi a mano o al PC: cosa hai fatto oggi, cosa hai imparato, 3 cose per cui sei grato. Mette ordine nella mente e consolida i progressi.'}
 };
 
@@ -952,6 +976,7 @@ function checkNewDay(){
   if(pendingPenalty) S.missions.unshift(buildPenaltyMission(S.level));
   S.bonusClaimed=false; S.firstStrikeUsed=false;
   S.dungeon=null;
+  RUN=null;
   save(); render();
 }
 document.addEventListener('visibilitychange', ()=>{
@@ -990,6 +1015,7 @@ function declineDungeon(){
 
 function toggleMission(i, ev){
   const m=S.missions[i];
+  if(RUN && RUN.mi===i && ev) RUN=null;   // spunta manuale durante la sessione → sessione annullata
   if(!m.done){
     const r=computeReward(m);
     m.done=true;
@@ -1086,6 +1112,157 @@ function showTab(t){
   });
   if(typeof window!=='undefined' && window.scrollTo) window.scrollTo({top:0,behavior:'instant'});
 }
+
+// ─────────────────────────────────────────
+// PLAYER ESERCIZIO — 3·2·1, serie, riposo, spunta automatica
+// (personal trainer: riposi 45s forza · 30s cardio/core · 75s circuito)
+// ─────────────────────────────────────────
+let RUN=null, audioCtx=null;
+function beep(f,d){ try{
+  const AC = typeof window!=='undefined' && (window.AudioContext||window.webkitAudioContext);
+  if(!AC) return;
+  audioCtx=audioCtx||new AC();
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.frequency.value=f||880; o.type='square'; g.gain.value=.12;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime+(d||90)/1000);
+}catch(e){} }
+function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+
+// costruisce il piano di esecuzione (serie + riposi) da una missione
+function planFor(m){
+  const nums=String(m.target).match(/\d+/g)||[];
+  const n1=nums.length?parseInt(nums[0]):0;
+  const C={type:'count',secs:3};
+  const seq=(mode,per,sets,rest,unit,setName)=>{
+    const st=[C];
+    for(let s=1;s<=sets;s++){
+      st.push(mode==='time'
+        ? {type:'work-time',secs:per,set:s,sets,unit,setName}
+        : {type:'work-reps',reps:per,set:s,sets,unit,setName});
+      if(s<sets && rest>0) st.push({type:'rest',secs:rest,set:s,sets,setName});
+    }
+    return st;
+  };
+  if(m.penalty){
+    const sq=n1||30, mn=nums[1]?parseInt(nums[1]):20;
+    const per=Math.ceil(sq/3), st=[C];
+    for(let s=1;s<=3;s++){
+      st.push({type:'work-reps',reps:per,set:s,sets:4,unit:'squat',setName:'FASE'});
+      st.push({type:'rest',secs:40,set:s,sets:4,setName:'FASE'});
+    }
+    st.push({type:'work-time',secs:mn*60,set:4,sets:4,unit:'camminata',setName:'FASE'});
+    return st;
+  }
+  if(m.dungeon){
+    if(m.id==='dg2') return seq('reps',1,3,75,'giro','GIRO');
+    return seq('reps',Math.ceil(n1/3),3,m.id==='dg3'?45:30,'rip.','GIRO');
+  }
+  const e=EX[m.id];
+  if(!e || e.allday || !n1) return null;
+  if(e.u==='min')      return seq('time',n1*60,1,0,'min');
+  if(e.u==='sec')      return n1<=45 ? seq('time',n1,1,0,'sec')
+                              : seq('time',Math.ceil(n1/3),3,30,'sec','SERIE');
+  if(e.u==='sec/lato') return seq('time',n1,2,20,'sec','LATO');
+  const sets=n1<=12?2:3, per=Math.ceil(n1/sets);
+  const rest=(m.stat==='FOR'||m.id==='burpee')?45:30;
+  const unit=e.u==='rip./lato'?'per lato':'rip.';
+  return seq('reps',per,sets,rest,unit,'SERIE');
+}
+
+const curStep=()=>RUN?RUN.steps[RUN.idx]:null;
+function armStep(){ const st=curStep(); if(st && st.type!=='work-reps') RUN.endsAt=Date.now()+st.secs*1000; }
+
+function startExercise(i){
+  const m=S.missions[i];
+  if(!m || m.done) return;
+  const steps=planFor(m); if(!steps) return;
+  RUN={mi:i, steps, idx:0, paused:false, endsAt:0, remain:0, key:'', lastSec:-1};
+  armStep(); beep(660,80); buzz(40);
+  render(); updatePlayer(true);
+}
+function advance(){
+  RUN.idx++; RUN.lastSec=-1;
+  if(RUN.idx>=RUN.steps.length){ finishRun(); return; }
+  armStep();
+  const st=curStep();
+  if(st.type==='rest'){ beep(520,130); buzz(60); }
+  else { beep(880,150); buzz([60,40,60]); }
+  updatePlayer(true);
+}
+function finishRun(){
+  const mi=RUN.mi; RUN=null;
+  beep(990,200); buzz([80,50,80,50,140]);
+  const m=S.missions[mi];
+  if(m && !m.done) toggleMission(mi,null);   // spunta + punti automatici
+  else render();
+  floatText('ESERCIZIO COMPLETATO ✓','var(--ok)',window.innerWidth/2-100,window.innerHeight/2);
+}
+function doneSet(){ const st=curStep(); if(st && st.type==='work-reps' && !RUN.paused) advance(); }
+function skipRest(){ const st=curStep(); if(st && st.type==='rest') RUN.endsAt=Date.now(); }
+function addRest(){ const st=curStep(); if(st && st.type==='rest'){ RUN.endsAt+=15000; updatePlayer(); } }
+function pauseRun(){
+  if(!RUN) return;
+  const st=curStep();
+  if(RUN.paused){
+    if(st.type!=='work-reps') RUN.endsAt=Date.now()+RUN.remain;
+    RUN.paused=false;
+  } else {
+    RUN.remain=Math.max(0,RUN.endsAt-Date.now());
+    RUN.paused=true;
+  }
+  updatePlayer(true);
+}
+function cancelRun(){ RUN=null; render(); }
+
+const fmtT=s=>{ const m=Math.floor(s/60), ss=s%60; return m>0? m+':'+String(ss).padStart(2,'0') : String(ss); };
+function playerHtml(){
+  return `<div class="player">
+    <div class="p-phase" id="pl-phase"></div>
+    <div class="p-main" id="pl-main"></div>
+    <div class="p-round" id="pl-round"></div>
+    <div class="p-btns" id="pl-btns"></div>
+  </div>`;
+}
+function updatePlayer(rebuildBtns){
+  if(!RUN) return;
+  const st=curStep(); if(!st) return;
+  const elP=document.getElementById('pl-phase'), elM=document.getElementById('pl-main'),
+        elR=document.getElementById('pl-round'), elB=document.getElementById('pl-btns');
+  if(!elP||!elM||!elR||!elB) return;
+  let phase, main, cls='';
+  const rSec = RUN.paused ? Math.max(0,Math.ceil(RUN.remain/1000))
+                          : Math.max(0,Math.ceil((RUN.endsAt-Date.now())/1000));
+  if(st.type==='count'){ phase='PRONTI'; main=rSec>0?rSec:'VIA'; cls='count'; }
+  else if(st.type==='work-time'){ phase='ESERCIZIO'; main=fmtT(rSec); }
+  else if(st.type==='work-reps'){ phase='ESERCIZIO'; main=st.reps+' '+(st.unit||'rip.'); }
+  else { phase='RIPOSO'; main=fmtT(rSec); cls='rest'; }
+  if(RUN.paused) phase='PAUSA';
+  elP.textContent=phase; elP.className='p-phase '+cls;
+  elM.textContent=main; elM.className='p-main '+cls+(String(main).length>5?' small':'');
+  elR.textContent = st.sets>1 ? (st.setName||'SERIE')+' '+st.set+' / '+st.sets : '';
+  const key=st.type+':'+RUN.idx+':'+RUN.paused;
+  if(rebuildBtns || RUN.key!==key){
+    RUN.key=key;
+    let b='';
+    if(st.type==='work-reps' && !RUN.paused) b+=`<button class="btn mini" onclick="doneSet()">SERIE FATTA ✓</button>`;
+    if(st.type!=='work-reps') b+=`<button class="btn mini ghost" onclick="pauseRun()">${RUN.paused?'RIPRENDI':'PAUSA'}</button>`;
+    if(st.type==='rest') b+=`<button class="btn mini ghost" onclick="skipRest()">SALTA</button><button class="btn mini ghost" onclick="addRest()">+15s</button>`;
+    b+=`<button class="btn mini ghost" onclick="cancelRun()">ANNULLA</button>`;
+    elB.innerHTML=b;
+  }
+}
+// ticker: preciso sui timestamp, sopravvive al throttling del browser
+setInterval(()=>{
+  if(!RUN || RUN.paused) return;
+  const st=curStep(); if(!st || st.type==='work-reps') return;
+  const rMs=RUN.endsAt-Date.now();
+  const secs=Math.ceil(rMs/1000);
+  if((st.type==='count' || (st.type==='rest' && secs<=3)) && secs>0 && RUN.lastSec!==secs){
+    RUN.lastSec=secs; beep(440,70);
+  }
+  if(rMs<=0) advance(); else updatePlayer();
+},300);
 
 // ── pannello Salvataggio ──
 function updateSaveLine(){
@@ -1209,21 +1386,28 @@ function render(){
     const d=document.createElement('div');
     d.className='mission'+(m.done?' done':'')+(m.penalty?' penalty':'')+(m.dungeon?' dungeon':'');
     const preview=m.penalty?{pts:0,xp:computeReward(m).xp}:(m.done?{pts:m.gainPts,xp:m.gainXp}:computeReward(m));
+    const running = RUN && RUN.mi===i;
+    const canRun = !m.done && !running && planFor(m)!==null;
     d.innerHTML=`
       <div class="check" onclick="toggleMission(${i},event)">✓</div>
       <div class="m-body">
         <div class="m-name">${m.name}</div>
         <div class="m-target">${m.target}</div>
         <div class="m-time">${m.estMin!=null?'⏱ ≈ '+m.estMin+' min':'nell\u2019arco della giornata'}</div>
-        <button class="info-btn" onclick="toggleInfo(${i})">esecuzione ▾</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          ${canRun?`<button class="start-btn" onclick="startExercise(${i})">▶ AVVIA</button>`:''}
+          <button class="info-btn" onclick="toggleInfo(${i})">esecuzione ▾</button>
+        </div>
       </div>
       <div class="m-reward">
         <span class="tag ${m.stat}">${m.penalty?'PENALITÀ':'+'+preview.pts+' '+m.stat}</span>
         <span class="xp-tag">+${preview.xp} XP</span>
       </div>
+      ${running?playerHtml():''}
       <div class="m-info">${exSvg(m.art)}${m.info}</div>`;
     box.appendChild(d);
   });
+  if(RUN) updatePlayer(true);
 
   const done=S.missions.filter(m=>m.done).length, tot=S.missions.length;
   const b=document.getElementById('ui-bonus');
