@@ -366,7 +366,7 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
   <!-- ═══ MAIN ═══ -->
   <div id="scr-main" class="hidden">
 
-   <!-- ── VISTA HOME: stato + cancello + quest ── -->
+   <!-- ── VISTA HOME: stato + gate + quest ── -->
    <div class="view" id="view-home">
 
     <div class="sys"><span class="cb"></span>
@@ -385,18 +385,18 @@ input[type=text]:focus{border-color:var(--glow);box-shadow:0 0 12px var(--glow-s
       <div class="class-box" id="ui-class"></div>
     </div>
 
-    <!-- ═══ CANCELLO (sabato) ═══ -->
+    <!-- ═══ GATE (sabato) ═══ -->
     <div class="sys gate hidden" id="ui-gate"><span class="cb"></span>
-      <div class="sys-head"><div class="icon">◆</div><h2>Cancello</h2></div>
+      <div class="sys-head"><div class="icon">◆</div><h2>Gate</h2></div>
       <p style="text-align:center;font-size:18px;letter-spacing:1px;margin-bottom:6px">
-        Un Cancello è apparso.
+        Un Gate è apparso.
       </p>
       <p class="sub" style="margin-bottom:12px">
         Dungeon del sabato: 3 missioni extra ad alta intensità.<br>
         Se entri, <b style="color:var(--gold)">TUTTE le ricompense di oggi sono raddoppiate</b>.<br>
         Ma attento: le missioni del dungeon contano per la quest giornaliera —
         <b style="color:var(--danger)">fallirle significa penalità</b>.<br>
-        Se ignori il Cancello, la giornata resta normale.
+        Se ignori il Gate, la giornata resta normale.
       </p>
       <div class="row2">
         <button class="btn purple" onclick="enterDungeon()">ENTRA</button>
@@ -539,7 +539,10 @@ stretch_b:{head:[66,48],neck:[60,52],hip:[44,66],arms:[[[72,57],[81,61]],[[73,59
 sidestretch:{head:[65,17],neck:[63,24],hip:[58,48],arms:[[[70,17],[76,11]],[[68,19],[74,13]]],legs:[[[56,59],[54,72]],[[62,59],[64,72]]]},
 meditate:{head:[60,30],neck:[60,37],hip:[60,60],arms:[[[51,49],[47,57]],[[69,49],[73,57]]],legs:[[[46,63],[64,67]],[[74,63],[56,67]]]},
 sit_read:{head:[57,32],neck:[59,39],hip:[60,60],arms:[[[51,48],[50,52]],[[69,48],[68,52]]],legs:[[[46,63],[64,67]],[[74,63],[56,67]]]},
-lie:{head:[24,64],neck:[31,65],hip:[58,66],arms:[[[40,68],[46,68]],[[38,69],[44,69]]],legs:[[[74,64],[90,66]],[[76,65],[92,67]]]}
+lie:{head:[24,64],neck:[31,65],hip:[58,66],arms:[[[40,68],[46,68]],[[38,69],[44,69]]],legs:[[[74,64],[90,66]],[[76,65],[92,67]]]},
+shouldertap_a:{head:[22,44],neck:[30,48],hip:[64,55],arms:[[[33,59],[33,70]],[[24,55],[31,49]]],legs:[[[80,60],[97,70]],[[80,62],[95,71]]]},
+calf_up:{head:[60,12],neck:[60,19],hip:[60,43],arms:[[[55,30],[53,41]],[[65,30],[67,41]]],legs:[[[57,56],[55,69]],[[63,56],[65,69]]]},
+snow_b:{head:[28,56],neck:[34,59],hip:[62,64],arms:[[[46,62],[56,63]],[[47,63],[57,64]]],legs:[[[76,60],[92,55]],[[78,61],[94,56]]]}
 };
 const _arrowUD = x=>`<path d="M${x},38 v14 M${x-4},42 l4,-4 4,4 M${x-4},48 l4,4 4,-4" ${_ST2}/>`;
 const EXTRA = {
@@ -587,7 +590,11 @@ const ART = {
   journal:[ICONS.pencil],
   water:[ICONS.water],
   sleep:[_fr('lie')],
-  gate:[ICONS.gate]
+  gate:[ICONS.gate],
+  plankup:[_fr('plank'),_fr('pushup_top')],
+  shouldertap:[_fig(P.shouldertap_a),_fr('pushup_top')],
+  calfraise:[_fr('stand'),_fig(P.calf_up)+`<path d="M88,44 v14 M84,48 l4,-4 4,4" ${_ST2}/>`],
+  snowangel:[_fig(P.superman_up),_fig(P.snow_b)]
 };
 function exSvg(artId){
   const f = ART[artId]; if(!f) return '';
@@ -621,6 +628,14 @@ lunge:{name:'Affondi alternati',stat:'FOR',pts:3,xp:20,art:'lunge',t:L(10,2,60),
  info:'1) Passo avanti ampio. 2) Scendi finché il ginocchio dietro quasi tocca terra, busto verticale. 3) Spingi col tallone davanti e torna in piedi. Alterna le gambe. Equilibrio precario? Mano al muro.'},
 bridge:{name:'Ponte glutei',stat:'FOR',pts:3,xp:18,art:'bridge',t:L(15,3,100),u:'rip.',spu:2.5,
  info:'1) Sdraiato a pancia in su, ginocchia piegate, piedi a terra vicini ai glutei. 2) Solleva il bacino stringendo i glutei fino a formare una linea spalle-ginocchia. 3) Tieni 1 sec in alto, scendi lento.'},
+plankup:{name:'Plank-up',stat:'FOR',pts:4,xp:22,art:'plankup',t:L(6,1,40),u:'rip.',spu:4,
+ info:'1) Parti in plank sugli avambracci. 2) Appoggia una mano e poi l\u2019altra spingendoti in posizione di flessione a braccia tese. 3) Torna giù un avambraccio alla volta. Alterna il braccio che parte per primo. Tricipiti e spalle senza attrezzi.'},
+shouldertap:{name:'Tocchi alle spalle',stat:'FOR',pts:3,xp:18,art:'shouldertap',t:L(10,2,60),u:'rip. tot',spu:1.5,
+ info:'1) Posizione di flessione, braccia tese, piedi un po\u2019 più larghi delle spalle. 2) Stacca una mano e tocca la spalla opposta SENZA ruotare il bacino. 3) Riappoggia e alterna. Lento e stabile: il core lavora quanto le spalle.'},
+calfraise:{name:'Sollevamenti polpacci',stat:'FOR',pts:3,xp:15,art:'calfraise',t:L(15,3,100),u:'rip.',spu:2,
+ info:'1) In piedi, una mano al muro per l\u2019equilibrio se serve. 2) Sollevati sulle punte più in alto che puoi. 3) Scendi lento in 2 secondi. Troppo facile? Falli su una gamba sola, dimezzando le ripetizioni.'},
+snowangel:{name:'Angeli inversi',stat:'FOR',pts:3,xp:16,art:'snowangel',t:L(10,2,50),u:'rip.',spu:3,
+ info:'1) A pancia in giù, braccia tese avanti, petto appena sollevato da terra. 2) Porta le braccia in un ampio cerchio fino ai fianchi, come un angelo nella neve al contrario, senza mai appoggiarle. 3) Torna avanti. Spalle e alta schiena: l\u2019antidoto alla postura da scrivania.'},
 // ── CORE (RES) ──
 plank:{name:'Plank',stat:'RES',pts:3,xp:15,art:'plank',t:L(20,5,240),u:'sec',
  info:'1) Avambracci a terra, gomiti sotto le spalle. 2) Corpo in linea retta, glutei e addome contratti, non alzare il bacino. 3) Respira normalmente. Se cedi, dividi il tempo in 2-3 serie con 30 sec di pausa.'},
@@ -688,10 +703,21 @@ function estMin(exId, level){
   return Math.max(1, Math.ceil(secs/60));
 }
 
-const POOLS = {
-  push:['pushup','pushup_wide','pushup_diamond','pike'],
-  legs:['squat','sumo','lunge','bridge'],
-  core:['plank','sideplank','crunch','legraise','superman','birddog','wallsit'],
+// ── fasce muscolari (personal trainer): rotazione continua ogni 4 giorni
+//    → ogni fascia si allena e poi recupera 72-96h, come da manuale ──
+const FOCUS_ORDER=['braccia','gambe','busto','schiena'];
+const FOCUS={
+  braccia:['pushup_diamond','pike','plankup','shouldertap'],
+  gambe:['squat','sumo','lunge','calfraise'],
+  busto:['pushup','pushup_wide','crunch','legraise'],
+  schiena:['superman','birddog','bridge','snowangel']
+};
+function focusFor(ds){
+  const d=new Date(ds+'T12:00:00');
+  return FOCUS_ORDER[Math.floor(d.getTime()/86400000)%4];
+}
+const POOLS={
+  core:['plank','sideplank','wallsit'],
   cardio:['run','burpee','highknees','mclimber'],
   agi:['jjack','skater','squatjump','sidestretch','stretch'],
   vit:['water','sleep','walk'],
@@ -716,7 +742,7 @@ function buildDungeonMissions(level){
       info:'Circuito: esegui i 3 esercizi di fila senza pausa, poi recupera 60-90 sec e riparti. 3 giri totali. Se la forma cede, allunga il recupero: la qualità delle ripetizioni viene prima del cronometro.', done:false },
     { id:'dg3', dungeon:true, name:'⟨D⟩ Il Boss', stat:'FOR', pts:8, xp:60, art:'burpee',
       target:bp+' burpee', estMin:Math.max(3,Math.ceil(bp*6*1.6/60)),
-      info:'Lo scontro finale. Burpee a ritmo tuo, forma perfetta: schiena dritta quando appoggi le mani, salto esplosivo, atterraggio morbido. Dividili in serie da 5-8. Finiscili tutti e il Cancello è tuo.', done:false }
+      info:'Lo scontro finale. Burpee a ritmo tuo, forma perfetta: schiena dritta quando appoggi le mani, salto esplosivo, atterraggio morbido. Dividili in serie da 5-8. Finiscili tutti e il Gate è tuo.', done:false }
   ];
 }
 
@@ -727,16 +753,26 @@ function fnv(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(
 function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
 function questIdsFor(ds, last){
   const d = new Date(ds+'T12:00:00');
-  if(d.getDay()===0) return { ids: RECOVERY.slice(), picks:{} };
+  if(d.getDay()===0) return { ids: RECOVERY.slice(), picks:{}, focus:null };
   const rng = mulberry32(fnv(ds));
   const ids=[], picks={};
-  for(const pool of ['push','legs','core','cardio','agi','vit','int']){
+  // 2 esercizi dalla fascia muscolare in focus, diversi tra loro e da ieri
+  const grp=focusFor(ds), fp=FOCUS[grp];
+  let i1=Math.floor(rng()*fp.length);
+  if(last && fp[i1]===last.f1) i1=(i1+1)%fp.length;
+  let i2=Math.floor(rng()*fp.length);
+  if(i2===i1) i2=(i2+1)%fp.length;
+  if(last && fp[i2]===last.f2){ i2=(i2+1)%fp.length; if(i2===i1) i2=(i2+1)%fp.length; }
+  picks.f1=fp[i1]; picks.f2=fp[i2];
+  ids.push(fp[i1], fp[i2]);
+  // le altre categorie
+  for(const pool of ['core','cardio','agi','vit','int']){
     const arr=POOLS[pool];
     let i=Math.floor(rng()*arr.length);
     if(last && arr[i]===last[pool]) i=(i+1)%arr.length;
     picks[pool]=arr[i]; ids.push(arr[i]);
   }
-  return { ids, picks };
+  return { ids, picks, focus:grp };
 }
 
 // ─────────────────────────────────────────
@@ -806,9 +842,14 @@ const CLASSES = {
   RES:{ name:'GUARDIANO', icon:'🛡', desc:'Nessuno ti spezza. Missioni di Resistenza: punti +50%. Completamento giornaliero: +2 RES extra.' },
   AGI:{ name:'ASSASSINO', icon:'🗡', desc:'Veloce e letale. XP +25% su tutte le missioni. Completamento giornaliero: +2 AGI extra.' },
   VIT:{ name:'MONACO', icon:'☯', desc:'Il corpo è il tempio. Penalità XP dimezzate. Completamento giornaliero: +2 VIT extra.' },
-  INT:{ name:'ARCIMAGO', icon:'✦', desc:'La mente è l\u2019arma suprema. Bonus di completamento giornaliero RADDOPPIATO. +2 INT extra al giorno completato.' }
+  INT:{ name:'ARCIMAGO', icon:'✦', desc:'La mente è l\u2019arma suprema. Bonus di completamento giornaliero RADDOPPIATO. +2 INT extra al giorno completato.' },
+  NEC:{ name:'NEGROMANTE', icon:'☠', desc:'La classe nascosta: nessuna statistica ti definisce, tutte ti obbediscono come ombre. Completamento giornaliero: +1 a TUTTE le statistiche. «Arise»: ogni Quest Penalità saldata risorge in +3 punti alla tua statistica più bassa.' }
 };
 function pickClass(stats){
+  const vals=['FOR','RES','AGI','VIT','INT'].map(k=>stats[k]);
+  const max=Math.max(...vals), min=Math.min(...vals);
+  // build bilanciata (scarto ≤12% del massimo) → classe nascosta
+  if(max-min <= Math.max(3, Math.round(max*0.12))) return 'NEC';
   let best='FOR';
   for(const k of ['FOR','RES','AGI','VIT','INT']) if(stats[k]>stats[best]) best=k;
   return best;
@@ -870,7 +911,7 @@ function buildMissions(level, ds, last){
     return { id, name:e.name, stat:e.stat, pts:e.pts, xp:e.xp, art:e.art,
              target:(tv!==''?tv+' ':'')+e.u, estMin:estMin(id,level), info:e.info, done:false };
   });
-  return { missions, picks:q.picks };
+  return { missions, picks:q.picks, focus:q.focus };
 }
 function defaultSave(name){
   const b=buildMissions(1,todayStr(),null);
@@ -878,7 +919,7 @@ function defaultSave(name){
     v:4, name, level:1, xp:0, totalDone:0, streak:0,
     stats:{FOR:10,RES:10,AGI:10,VIT:10,INT:10},
     class:null, day:todayStr(),
-    missions:b.missions, lastPicks:b.picks,
+    missions:b.missions, lastPicks:b.picks, focus:b.focus,
     bonusClaimed:false, firstStrikeUsed:false, penaltyNotice:null,
     dungeon:null,            // null | 'declined' | 'active' | 'cleared' (solo sabato)
     dungeonsCleared:0,
@@ -972,7 +1013,7 @@ function checkNewDay(){
 
   S.day=t;
   const b=buildMissions(S.level,t,S.lastPicks);
-  S.missions=b.missions; S.lastPicks=b.picks;
+  S.missions=b.missions; S.lastPicks=b.picks; S.focus=b.focus;
   if(pendingPenalty) S.missions.unshift(buildPenaltyMission(S.level));
   S.bonusClaimed=false; S.firstStrikeUsed=false;
   S.dungeon=null;
@@ -1003,7 +1044,7 @@ function enterDungeon(){
   if(!S || S.dungeon!==null) return;
   S.dungeon='active';
   S.missions=S.missions.concat(buildDungeonMissions(S.level));
-  queueOverlay('CANCELLO APERTO','Sei entrato nel Dungeon.\nRicompense di oggi ×2. Completa TUTTO entro mezzanotte:\nfallire dentro un Cancello ha un prezzo.');
+  queueOverlay('GATE APERTO','Sei entrato nel Dungeon.\nRicompense di oggi ×2. Completa TUTTO entro mezzanotte:\nfallire dentro un Gate ha un prezzo.');
   flushOverlays();
   save(); render();
 }
@@ -1026,6 +1067,14 @@ function toggleMission(i, ev){
     if(!m.penalty) S.stats[m.stat]+=r.pts;
     S.xp+=r.xp; S.totalDone++;
 
+    // «Arise» del Negromante: la penalità saldata risorge in punti
+    if(m.penalty && S.class==='NEC'){
+      let low='FOR';
+      for(const k of ['FOR','RES','AGI','VIT','INT']) if(S.stats[k]<S.stats[low]) low=k;
+      S.stats[low]+=3; m.ariseStat=low;
+      if(ev) setTimeout(()=>floatText('ARISE  +3 '+low,'var(--int)',window.innerWidth/2-60,window.innerHeight/2-60),300);
+    }
+
     if(ev){
       const colors={FOR:'var(--str)',RES:'var(--end)',AGI:'var(--agi)',VIT:'var(--vit)',INT:'var(--int)',PEN:'var(--danger)'};
       const txt=m.penalty?`PENALITÀ SALDATA +${r.xp} XP`:`+${r.pts} ${m.stat}  +${r.xp} XP`;
@@ -1036,7 +1085,7 @@ function toggleMission(i, ev){
     if(S.dungeon==='active' && S.missions.filter(x=>x.dungeon).every(x=>x.done)){
       S.dungeon='cleared';
       S.dungeonsCleared++;
-      queueOverlay('DUNGEON COMPLETATO','⚔ Il Boss è caduto.\nHai conquistato il Cancello: tutte le ricompense di oggi restano raddoppiate.');
+      queueOverlay('DUNGEON COMPLETATO','⚔ Il Boss è caduto.\nHai conquistato il Gate: tutte le ricompense di oggi restano raddoppiate.');
       flushOverlays();
     }
 
@@ -1045,12 +1094,14 @@ function toggleMission(i, ev){
       const bonus=completionBonus();
       S.xp+=bonus;
       let msg=`QUEST COMPLETATA  +${bonus} XP`;
-      if(S.class){ S.stats[S.class]+=2; msg+=`  +2 ${S.class}`; }
+      if(S.class==='NEC'){ for(const k in S.stats) S.stats[k]++; msg+='  +1 TUTTE'; }
+      else if(S.class){ S.stats[S.class]+=2; msg+=`  +2 ${S.class}`; }
       setTimeout(()=>floatText(msg,'var(--gold)',window.innerWidth/2-90,window.innerHeight/2),350);
     }
   } else {
     m.done=false;
     if(!m.penalty) S.stats[m.stat]=Math.max(1,S.stats[m.stat]-(m.gainPts||m.pts));
+    if(m.penalty && m.ariseStat){ S.stats[m.ariseStat]=Math.max(1,S.stats[m.ariseStat]-3); m.ariseStat=null; }
     S.xp=Math.max(0,S.xp-(m.gainXp||m.xp));
     S.totalDone=Math.max(0,S.totalDone-1);
     if(m.usedFirstStrike){ S.firstStrikeUsed=false; m.usedFirstStrike=false; }
@@ -1353,7 +1404,7 @@ function render(){
       <div style="color:var(--muted);margin-top:3px">Al Lv.30 il Sistema ti assegnerà una classe in base alla tua statistica dominante. Allena ciò che vuoi diventare.</div>`;
   }
 
-  // ── Cancello del sabato ──
+  // ── Gate del sabato ──
   const gate=document.getElementById('ui-gate');
   if(isSaturday() && S.dungeon===null) gate.classList.remove('hidden');
   else gate.classList.add('hidden');
@@ -1363,10 +1414,11 @@ function render(){
   else if(S.dungeon==='cleared'){ dgN.classList.remove('hidden'); dgN.textContent='◆ DUNGEON CONQUISTATO — ricompense ×2 attive per il resto della giornata.'; }
   else dgN.classList.add('hidden');
 
+  const fx = S.focus ? 'FOCUS: '+S.focus.toUpperCase()+' · ' : '';
   document.getElementById('ui-qtitle').textContent =
     isSunday() ? '[ GIORNO DI RECUPERO — il corpo cresce quando riposa ]'
-    : isSaturday() ? '[ SABATO — UN CANCELLO SI È APERTO ]'
-    : '[ PREPARATI A DIVENTARE PIÙ FORTE ]';
+    : isSaturday() ? '[ '+fx+'UN GATE SI È APERTO ]'
+    : '[ '+fx+'PREPARATI A DIVENTARE PIÙ FORTE ]';
 
   // ── tempo totale stimato ──
   const mins=S.missions.filter(m=>!m.done && m.estMin!=null).reduce((s,m)=>s+m.estMin,0);
